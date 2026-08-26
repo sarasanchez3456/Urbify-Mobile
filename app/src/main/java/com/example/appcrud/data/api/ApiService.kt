@@ -1,39 +1,110 @@
 package com.example.appcrud.data.api
 
-import com.example.appcrud.data.model.Item
-import com.example.appcrud.data.model.User
+import com.example.appcrud.data.model.AuthResponse
+import com.example.appcrud.data.model.Calificacion
+import com.example.appcrud.data.model.Categoria
+import com.example.appcrud.data.model.EstadoUpdateRequest
+import com.example.appcrud.data.model.LoginRequest
+import com.example.appcrud.data.model.RegistroRequest
+import com.example.appcrud.data.model.Servicio
+import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.model.Usuario
 import retrofit2.http.*
 
 interface ApiService {
-    // Item CRUD
-    @GET("item")
-    suspend fun getItems(): List<Item>
 
-    @GET("item/{id}")
-    suspend fun getItem(@Path("id") id: String): Item
+    // Auth
+    @POST("auth/registro")
+    suspend fun registro(@Body request: RegistroRequest): AuthResponse
 
-    @POST("item")
-    suspend fun createItem(@Body item: Item): Item
+    @POST("auth/login")
+    suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    @PUT("item/{id}")
-    suspend fun updateItem(@Path("id") id: String, @Body item: Item): Item
+    @GET("auth/perfil")
+    suspend fun getPerfil(): Usuario
 
-    @DELETE("item/{id}")
-    suspend fun deleteItem(@Path("id") id: String)
+    @PUT("auth/perfil")
+    suspend fun updatePerfil(@Body usuario: Usuario): Usuario
 
-    // User CRUD
-    @GET("user")
-    suspend fun getUsers(): List<User>
+    // Categorías
+    @GET("categorias")
+    suspend fun getCategorias(): List<Categoria>
 
-    @GET("user/{id}")
-    suspend fun getUser(@Path("id") id: String): User
+    @POST("categorias")
+    suspend fun createCategoria(@Body categoria: Categoria): Categoria
 
-    @POST("user")
-    suspend fun createUser(@Body user: User): User
+    @PUT("categorias/{id}")
+    suspend fun updateCategoria(@Path("id") id: Int, @Body categoria: Categoria): Categoria
 
-    @PUT("user/{id}")
-    suspend fun updateUser(@Path("id") id: String, @Body user: User): User
+    @DELETE("categorias/{id}")
+    suspend fun deleteCategoria(@Path("id") id: Int)
 
-    @DELETE("user/{id}")
-    suspend fun deleteUser(@Path("id") id: String)
+    // Servicios
+    @GET("servicios/destacados")
+    suspend fun getServiciosDestacados(): List<Servicio>
+
+    @GET("servicios/buscar")
+    suspend fun buscarServicios(@Query("q") query: String): List<Servicio>
+
+    @GET("servicios/categoria/{categoriaId}")
+    suspend fun getServiciosPorCategoria(@Path("categoriaId") categoriaId: Int): List<Servicio>
+
+    @GET("servicios/mios")
+    suspend fun getMisServicios(): List<Servicio>
+
+    @GET("servicios/{id}")
+    suspend fun getServicio(@Path("id") id: Int): Servicio
+
+    @POST("servicios")
+    suspend fun createServicio(@Body servicio: Servicio): Servicio
+
+    @PUT("servicios/{id}")
+    suspend fun updateServicio(@Path("id") id: Int, @Body servicio: Servicio): Servicio
+
+    @DELETE("servicios/{id}")
+    suspend fun deleteServicio(@Path("id") id: Int)
+
+    // Solicitudes
+    @POST("solicitudes")
+    suspend fun createSolicitud(@Body solicitud: Solicitud): Solicitud
+
+    @GET("solicitudes/cliente")
+    suspend fun getSolicitudesCliente(): List<Solicitud>
+
+    @GET("solicitudes/proveedor")
+    suspend fun getSolicitudesProveedor(): List<Solicitud>
+
+    @PUT("solicitudes/{id}/estado")
+    suspend fun cambiarEstadoSolicitud(
+        @Path("id") id: Int,
+        @Body estado: EstadoUpdateRequest
+    ): Solicitud
+
+    @DELETE("solicitudes/{id}")
+    suspend fun deleteSolicitud(@Path("id") id: Int)
+
+    // Calificaciones
+    @POST("calificaciones")
+    suspend fun createCalificacion(@Body calificacion: Calificacion): Calificacion
+
+    @GET("calificaciones/proveedor/{proveedorId}")
+    suspend fun getCalificacionesProveedor(@Path("proveedorId") proveedorId: Int): List<Calificacion>
+
+    @PUT("calificaciones/{id}")
+    suspend fun updateCalificacion(@Path("id") id: Int, @Body calificacion: Calificacion): Calificacion
+
+    @DELETE("calificaciones/{id}")
+    suspend fun deleteCalificacion(@Path("id") id: Int)
+
+    // Proveedores
+    @GET("proveedores/cercanos")
+    suspend fun getProveedoresCercanos(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("radio") radio: Double? = null
+    ): List<Usuario>
+
+    // Stats
+    @GET("stats")
+    suspend fun getStats(): Map<String, Any>
 }
