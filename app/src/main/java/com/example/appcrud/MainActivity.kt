@@ -4,14 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
+import com.example.appcrud.ui.navigation.AppNavGraph
 import com.example.appcrud.ui.theme.AppCRUDTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,23 +14,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppCRUDTheme {
-                MainScreen()
+                val navController = rememberNavController()
+                AppNavGraph(navController = navController)
             }
-        }
-    }
-}
-
-// Placeholder hasta que se integre el NavHost real (login, catálogo, solicitudes, etc.).
-@Composable
-fun MainScreen() {
-    Scaffold { innerPadding ->
-        Box(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Urbify")
         }
     }
 }
