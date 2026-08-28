@@ -1,6 +1,8 @@
 package com.example.appcrud.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,11 +14,15 @@ fun HomeScreen(
     onCreateSolicitud: (Int, String) -> Unit,
     onMisSolicitudesCliente: () -> Unit,
     onMisSolicitudesProveedor: () -> Unit,
-    onHistorialCalificaciones: (Int, String) -> Unit
+    onHistorialCalificaciones: (Int, String) -> Unit,
+    onCatalogo: () -> Unit = {},
+    onProveedoresCercanos: () -> Unit = {},
+    onStats: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -27,6 +33,33 @@ fun HomeScreen(
         )
 
         Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onCatalogo,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Ver catálogo")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onProveedoresCercanos,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Proveedores cercanos")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onStats,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Estadísticas")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Button(
             onClick = { onCreateSolicitud(1, "Ejemplo de servicio") },

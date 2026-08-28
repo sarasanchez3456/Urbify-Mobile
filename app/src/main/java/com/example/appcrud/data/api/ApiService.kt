@@ -5,9 +5,11 @@ import com.example.appcrud.data.model.Calificacion
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.LoginRequest
+import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.model.Stats
 import com.example.appcrud.data.model.Usuario
 import retrofit2.http.*
 
@@ -102,9 +104,9 @@ interface ApiService {
         @Query("lat") lat: Double,
         @Query("lng") lng: Double,
         @Query("radio") radio: Double? = null
-    ): List<Usuario>
+    ): List<ProveedorCercano>
 
     // Stats
     @GET("stats")
-    suspend fun getStats(): Map<String, Any>
+    suspend fun getStats(): Stats
 }

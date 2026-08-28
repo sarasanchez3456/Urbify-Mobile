@@ -1,6 +1,5 @@
 package com.example.appcrud.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,35 +8,79 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = UrbifyPrimary,
     onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primaryContainer = UrbifyPrimaryContainer,
+    onPrimaryContainer = Color.White,
+    secondary = UrbifySecondary,
+    onSecondary = UrbifyOnSecondary,
+    secondaryContainer = UrbifySecondaryContainer,
+    onSecondaryContainer = UrbifyOnSecondary,
+    tertiary = UrbifySecondary,
+    onTertiary = UrbifyOnSecondary,
+    tertiaryContainer = UrbifySecondaryContainer,
+    onTertiaryContainer = UrbifyOnSecondary,
+    background = UrbifyBackground,
+    onBackground = UrbifyOnSurface,
+    surface = UrbifyBackground,
+    onSurface = UrbifyOnSurface,
+    surfaceVariant = UrbifySurfaceVariant,
+    onSurfaceVariant = UrbifyOnSurfaceVariant,
+    surfaceContainer = UrbifySurfaceContainer,
+    outline = UrbifyOutline,
+    outlineVariant = UrbifyOutlineVariant,
+    inverseSurface = UrbifyInverseSurface,
+    inverseOnSurface = UrbifyBackground,
+    error = UrbifyError,
+    onError = Color.White,
+    errorContainer = UrbifyErrorContainer,
+    onErrorContainer = UrbifyOnErrorContainer
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = UrbifyPrimaryDark,
+    onPrimary = UrbifyOnPrimaryDark,
+    primaryContainer = UrbifyPrimaryContainerDark,
+    onPrimaryContainer = Color.White,
+    secondary = UrbifySecondaryDark,
+    onSecondary = UrbifyOnSecondaryDark,
+    secondaryContainer = UrbifySecondaryContainerDark,
+    onSecondaryContainer = Color.White,
+    tertiary = UrbifySecondaryDark,
+    onTertiary = UrbifyOnSecondaryDark,
+    tertiaryContainer = UrbifySecondaryContainerDark,
+    onTertiaryContainer = Color.White,
+    background = UrbifyBackgroundDark,
+    onBackground = UrbifyOnBackgroundDark,
+    surface = UrbifyBackgroundDark,
+    onSurface = UrbifyOnBackgroundDark,
+    surfaceVariant = UrbifySurfaceVariantDark,
+    onSurfaceVariant = UrbifyOnSurfaceVariantDark,
+    outline = UrbifyOutlineDark,
+    error = UrbifyErrorDark,
+    onError = UrbifyOnErrorDark,
+    errorContainer = UrbifyErrorContainerDark,
+    onErrorContainer = UrbifyOnErrorContainerDark
+)
+
+/** Degradado de marca para botones primarios (135°, como `.btn-primary` en la web). */
+val UrbifyPrimaryGradient = Brush.linearGradient(
+    colors = listOf(UrbifyPrimary, UrbifyPrimaryContainer)
+)
+
+/**
+ * Tema compartido de Urbify. `dynamicColor` desactivado por defecto para mantener
+ * el branding (paleta tomada del frontend web de Urbify).
+ */
 @Composable
-fun AppCRUDTheme(
+fun UrbifyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

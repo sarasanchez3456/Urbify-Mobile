@@ -9,7 +9,11 @@ import androidx.navigation.navArgument
 import com.example.appcrud.ui.screens.*
 
 object Routes {
+    const val LOGIN = "login"
     const val HOME = "home"
+    const val CATALOGO = "catalogo"
+    const val PROVEEDORES_CERCANOS = "proveedores_cercanos"
+    const val STATS = "stats"
     const val CREATE_SOLICITUD = "create_solicitud/{idServicio}/{tituloServicio}"
     const val MIS_SOLICITUDES_CLIENTE = "mis_solicitudes_cliente"
     const val MIS_SOLICITUDES_PROVEEDOR = "mis_solicitudes_proveedor"
@@ -30,10 +34,29 @@ object Routes {
 fun AppNavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME
+        startDestination = Routes.LOGIN
     ) {
+        composable(Routes.LOGIN) {
+            AuthScreen(
+                onAuthSuccess = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Routes.HOME) {
             HomeScreen(
+                onCatalogo = {
+                    navController.navigate(Routes.CATALOGO)
+                },
+                onProveedoresCercanos = {
+                    navController.navigate(Routes.PROVEEDORES_CERCANOS)
+                },
+                onStats = {
+                    navController.navigate(Routes.STATS)
+                },
                 onCreateSolicitud = { idServicio, titulo ->
                     navController.navigate(Routes.createSolicitud(idServicio, titulo))
                 },
@@ -46,6 +69,33 @@ fun AppNavGraph(navController: NavHostController) {
                 onHistorialCalificaciones = { proveedorId, nombre ->
                     navController.navigate(Routes.historialCalificaciones(proveedorId, nombre))
                 }
+            )
+        }
+
+        composable(Routes.CATALOGO) {
+            CatalogoScreen(
+                onBack = { navController.popBackStack() },
+                onServicioSelected = { idServicio, titulo ->
+                    navController.navigate(Routes.createSolicitud(idServicio, titulo))
+                },
+                onProveedoresCercanos = {
+                    navController.navigate(Routes.PROVEEDORES_CERCANOS)
+                },
+                onStats = {
+                    navController.navigate(Routes.STATS)
+                }
+            )
+        }
+
+        composable(Routes.PROVEEDORES_CERCANOS) {
+            ProveedoresCercanosScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.STATS) {
+            StatsScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
