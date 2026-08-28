@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.appcrud.ui.theme.AppCRUDTheme
 
+import androidx.compose.ui.tooling.preview.Preview
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,5 +40,13 @@ fun MainScreen() {
         ) {
             Text("Urbify")
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreview() {
+    AppCRUDTheme {
+        MainScreen()
     }
 }
