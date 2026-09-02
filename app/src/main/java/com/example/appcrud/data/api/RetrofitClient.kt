@@ -1,6 +1,7 @@
 package com.example.appcrud.data.api
 
 import com.example.appcrud.data.session.TokenManager
+import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -8,8 +9,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // Emulador -> host: 10.0.2.2. En dispositivo físico, usar la IP local del PC.
     private const val BASE_URL = "http://10.0.2.2:4000/api/"
+
+    private val gson = GsonBuilder()
+        .setLenient()
+        .create()
+
+    private val gsonConverter: GsonConverterFactory by lazy {
+        GsonConverterFactory.create(gson)
+    }
 
     private val authInterceptor = Interceptor { chain ->
         val original = chain.request()
@@ -37,7 +45,7 @@ object RetrofitClient {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(httpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(gsonConverter)
             .build()
             .create(ApiService::class.java)
     }
