@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,33 +62,22 @@ fun MisSolicitudesProveedorScreen(
                 }
             }
             uiState.error != null -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.error ?: "",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadSolicitudesProveedor() }) {
-                            Text("Reintentar")
-                        }
-                    }
-                }
+                EmptyState(
+                    icon = Icons.Default.Inbox,
+                    title = "Algo salió mal",
+                    subtitle = uiState.error,
+                    actionLabel = "Reintentar",
+                    onAction = { viewModel.loadSolicitudesProveedor() },
+                    modifier = Modifier.padding(padding)
+                )
             }
             uiState.solicitudes.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .padding(padding)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No tienes solicitudes pendientes")
-                }
+                EmptyState(
+                    icon = Icons.Default.Inbox,
+                    title = "No tienes solicitudes recibidas",
+                    subtitle = "Las solicitudes de clientes aparecerán aquí",
+                    modifier = Modifier.padding(padding)
+                )
             }
             else -> {
                 LazyColumn(
@@ -199,7 +190,7 @@ private fun SolicitudProveedorCard(
             if (solicitud.direccion != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "📍 ${solicitud.direccion}",
+                    text = solicitud.direccion,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

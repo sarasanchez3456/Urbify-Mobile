@@ -25,6 +25,7 @@ interface ApiService {
     @GET("auth/perfil")
     suspend fun getPerfil(): Usuario
 
+
     @PUT("auth/perfil")
     suspend fun updatePerfil(@Body usuario: Usuario): Usuario
 

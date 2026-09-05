@@ -1,21 +1,29 @@
 package com.example.appcrud.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.Servicio
+import com.example.appcrud.ui.components.EmptyState
+import com.example.appcrud.ui.theme.UrbifyPrimary
 import com.example.appcrud.ui.viewmodel.CatalogoViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,8 +31,6 @@ import com.example.appcrud.ui.viewmodel.CatalogoViewModel
 fun CatalogoScreen(
     onBack: () -> Unit,
     onServicioSelected: (idServicio: Int, tituloServicio: String) -> Unit,
-    onProveedoresCercanos: () -> Unit,
-    onStats: () -> Unit,
     viewModel: CatalogoViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -81,21 +87,13 @@ fun CatalogoScreen(
                     }
                 }
                 uiState.error != null && uiState.categorias.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.error ?: "Error desconocido",
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { viewModel.cargarCategorias() }) {
-                                Text("Reintentar")
-                            }
-                        }
-                    }
+                    EmptyState(
+                        icon = Icons.Default.SearchOff,
+                        title = "Algo salió mal",
+                        subtitle = uiState.error,
+                        actionLabel = "Reintentar",
+                        onAction = { viewModel.cargarCategorias() }
+                    )
                 }
                 else -> {
                     if (busqueda.isNotEmpty()) {
@@ -113,9 +111,7 @@ fun CatalogoScreen(
                     } else {
                         ListaCategorias(
                             categorias = uiState.categorias,
-                            onCategoriaSelected = { viewModel.seleccionarCategoria(it) },
-                            onProveedoresCercanos = onProveedoresCercanos,
-                            onStats = onStats
+                            onCategoriaSelected = { viewModel.seleccionarCategoria(it) }
                         )
                     }
                 }
@@ -127,9 +123,7 @@ fun CatalogoScreen(
 @Composable
 private fun ListaCategorias(
     categorias: List<Categoria>,
-    onCategoriaSelected: (Categoria) -> Unit,
-    onProveedoresCercanos: () -> Unit,
-    onStats: () -> Unit
+    onCategoriaSelected: (Categoria) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp),
@@ -157,23 +151,6 @@ private fun ListaCategorias(
                 }
             }
         }
-
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onProveedoresCercanos,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Proveedores cercanos")
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onStats,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Estadísticas")
-            }
-        }
     }
 }
 
@@ -199,16 +176,11 @@ private fun ServiciosPorCategoria(
         }
 
         if (servicios.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No hay servicios en esta categoría",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            EmptyState(
+                icon = Icons.Default.SearchOff,
+                title = "No hay servicios",
+                subtitle = "Esta categoría no tiene servicios disponibles"
+            )
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -228,16 +200,11 @@ private fun ServiciosBusqueda(
     onServicioSelected: (Int, String) -> Unit
 ) {
     if (servicios.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "No se encontraron servicios",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        EmptyState(
+            icon = Icons.Default.SearchOff,
+            title = "No se encontraron servicios",
+            subtitle = "Intenta con otro término de búsqueda"
+        )
     } else {
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -256,6 +223,10 @@ private fun ServicioCard(
     servicio: Servicio,
     onServicioSelected: (Int, String) -> Unit
 ) {
+    val initials = servicio.nombreProveedor?.let { proveedor ->
+        proveedor.split(" ").take(2).joinToString("") { it.first().uppercase() }
+    } ?: "?"
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -266,36 +237,78 @@ private fun ServicioCard(
                 )
             }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = servicio.titulo,
-                style = MaterialTheme.typography.titleMedium
-            )
-            servicio.descripcion?.let {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = initials,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-            servicio.precio?.let {
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "$$it",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = servicio.titulo,
+                    style = MaterialTheme.typography.titleMedium
                 )
+                servicio.descripcion?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                servicio.nombreProveedor?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                servicio.promedioCalificacion?.let { rating ->
+                    Spacer(modifier = Modifier.height(6.dp))
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                text = "$rating",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = "Calificación",
+                                tint = UrbifyPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                        )
+                    )
+                }
             }
-            servicio.nombreProveedor?.let {
+
+            servicio.precio?.let { precio ->
                 Text(
-                    text = "Proveedor: $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            servicio.promedioCalificacion?.let {
-                Text(
-                    text = "Calificación: $it",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "$$precio",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

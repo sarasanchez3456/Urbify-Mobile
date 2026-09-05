@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +48,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.data.location.LocationProvider
 import com.example.appcrud.data.model.ProveedorCercano
+import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.viewmodel.ProveedoresCercanosViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -125,44 +129,39 @@ fun ProveedoresCercanosScreen(
             }
 
             when {
-                !permissionGranted -> CenteredBox {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Necesitamos tu ubicación para mostrarte proveedores cercanos",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
+                !permissionGranted -> EmptyState(
+                    icon = Icons.Default.LocationOff,
+                    title = "Necesitamos tu ubicación",
+                    subtitle = "Para mostrarte proveedores cercanos, activa los permisos de ubicación",
+                    actionLabel = "Permitir ubicación",
+                    onAction = {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
                             )
-                        }) {
-                            Text("Permitir ubicación")
-                        }
-                    }
-                }
-
-                uiState.isLoading -> CenteredBox { CircularProgressIndicator() }
-
-                uiState.error != null -> CenteredBox {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = uiState.error ?: "",
-                            color = MaterialTheme.colorScheme.error
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { fetchUbicacionYCargar() }) {
-                            Text("Reintentar")
-                        }
                     }
-                }
+                )
 
-                uiState.proveedores.isEmpty() -> CenteredBox {
-                    Text("No hay proveedores en el radio seleccionado")
-                }
+                uiState.isLoading -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
+
+                uiState.error != null -> EmptyState(
+                    icon = Icons.Default.ErrorOutline,
+                    title = "Algo salió mal",
+                    subtitle = uiState.error,
+                    actionLabel = "Reintentar",
+                    onAction = { fetchUbicacionYCargar() }
+                )
+
+                uiState.proveedores.isEmpty() -> EmptyState(
+                    icon = Icons.Default.LocationOn,
+                    title = "No hay proveedores",
+                    subtitle = "No se encontraron proveedores en el radio seleccionado"
+                )
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -215,7 +214,7 @@ private fun ProveedorCard(proveedor: ProveedorCercano) {
             proveedor.direccion?.let {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "📍 $it",
+                    text = it,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -223,7 +222,7 @@ private fun ProveedorCard(proveedor: ProveedorCercano) {
             proveedor.telefono?.let {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "📞 $it",
+                    text = it,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -244,16 +243,4 @@ private fun ProveedorCard(proveedor: ProveedorCercano) {
 private fun formatKm(value: Double): String {
     val rounded = (value * 10).roundToInt() / 10.0
     return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
-}
-
-@Composable
-private fun CenteredBox(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        content()
-    }
 }

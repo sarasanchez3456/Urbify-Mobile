@@ -1,4 +1,4 @@
-package com.example.appcrud.data.model
+ package com.example.appcrud.data.model
 
 import com.google.gson.annotations.SerializedName
 
