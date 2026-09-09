@@ -28,10 +28,7 @@ class CalificacionViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val calificaciones = repository.getCalificacionesProveedor(proveedorId)
-                _uiState.value = _uiState.value.copy(
-                    calificaciones = calificaciones,
-                    isLoading = false
-                )
+                _uiState.value = _uiState.value.copy(calificaciones = calificaciones, isLoading = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -67,6 +64,48 @@ class CalificacionViewModel : ViewModel() {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "Error al enviar calificación"
+                )
+            }
+        }
+    }
+
+    fun updateCalificacion(id: Int, calificacion: Calificacion) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                val updated = repository.updateCalificacion(id, calificacion)
+                val lista = _uiState.value.calificaciones.map {
+                    if (it.idCalificacion == id) updated else it
+                }
+                _uiState.value = _uiState.value.copy(
+                    calificaciones = lista,
+                    isLoading = false,
+                    successMessage = "Calificación actualizada"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Error al actualizar calificación"
+                )
+            }
+        }
+    }
+
+    fun deleteCalificacion(id: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                repository.deleteCalificacion(id)
+                val lista = _uiState.value.calificaciones.filter { it.idCalificacion != id }
+                _uiState.value = _uiState.value.copy(
+                    calificaciones = lista,
+                    isLoading = false,
+                    successMessage = "Calificación eliminada"
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "Error al eliminar calificación"
                 )
             }
         }

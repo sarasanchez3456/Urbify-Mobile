@@ -258,6 +258,7 @@ fun AppNavGraph(
                 HistorialCalificacionesScreen(
                     proveedorId = proveedorId,
                     nombreProveedor = nombreProveedor,
+                    clienteId = sessionState.usuario?.idUsuario,
                     onBack = { navController.popBackStack() }
                 )
             }
