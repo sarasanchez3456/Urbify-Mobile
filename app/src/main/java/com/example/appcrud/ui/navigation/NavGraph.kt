@@ -3,6 +3,7 @@ package com.example.appcrud.ui.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -27,6 +28,9 @@ object Routes {
     const val CALIFICAR = "calificar/{idSolicitud}/{idProveedor}/{tituloServicio}"
     const val HISTORIAL_CALIFICACIONES = "historial_calificaciones/{proveedorId}/{nombreProveedor}"
     const val PERFIL = "perfil"
+    const val MIS_SERVICIOS = "mis_servicios"
+    const val CREAR_SERVICIO = "crear_servicio"
+    const val EDITAR_SERVICIO = "editar_servicio/{idServicio}"
 
     fun createSolicitud(idServicio: Int, tituloServicio: String) =
         "create_solicitud/$idServicio/${java.net.URLEncoder.encode(tituloServicio, "UTF-8")}"
@@ -36,12 +40,16 @@ object Routes {
 
     fun historialCalificaciones(proveedorId: Int, nombreProveedor: String) =
         "historial_calificaciones/$proveedorId/${java.net.URLEncoder.encode(nombreProveedor, "UTF-8")}"
+
+    fun editarServicio(idServicio: Int) = "editar_servicio/$idServicio"
 }
 
 private val bottomBarRoutes = setOf(
     Routes.HOME,
     Routes.CATALOGO,
     Routes.MIS_SOLICITUDES_CLIENTE,
+    Routes.MIS_SOLICITUDES_PROVEEDOR,
+    Routes.MIS_SERVICIOS,
     Routes.PERFIL
 )
 
@@ -53,6 +61,7 @@ fun AppNavGraph(
 ) {
     // Scoped to the Activity — shared across all destinations
     val sessionViewModel: SessionViewModel = viewModel()
+    val sessionState by sessionViewModel.state.collectAsState()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -64,6 +73,7 @@ fun AppNavGraph(
             if (showBottomBar) {
                 UrbifyBottomBar(
                     currentRoute = currentRoute,
+                    rol = sessionState.usuario?.rol,
                     onNavigate = { route ->
                         navController.navigate(route) {
                             popUpTo(Routes.HOME) { saveState = true }
@@ -118,7 +128,11 @@ fun AppNavGraph(
                         }
                     },
                     onMisSolicitudesProveedor = {
-                        navController.navigate(Routes.MIS_SOLICITUDES_PROVEEDOR)
+                        navController.navigate(Routes.MIS_SOLICITUDES_PROVEEDOR) {
+                            popUpTo(Routes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     },
                     onHistorialCalificaciones = { proveedorId, nombre ->
                         navController.navigate(Routes.historialCalificaciones(proveedorId, nombre))
@@ -235,6 +249,37 @@ fun AppNavGraph(
                             popUpTo(0) { inclusive = true }
                         }
                     }
+                )
+            }
+
+            // ── Servicios del proveedor ──────────────────────────────────────
+
+            composable(Routes.MIS_SERVICIOS) {
+                MisServiciosScreen(
+                    onCrear = { navController.navigate(Routes.CREAR_SERVICIO) },
+                    onEditar = { idServicio ->
+                        navController.navigate(Routes.editarServicio(idServicio))
+                    }
+                )
+            }
+
+            composable(Routes.CREAR_SERVICIO) {
+                CreateEditServicioScreen(
+                    idServicio = null,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = Routes.EDITAR_SERVICIO,
+                arguments = listOf(navArgument("idServicio") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val idServicio = backStackEntry.arguments?.getInt("idServicio")
+                CreateEditServicioScreen(
+                    idServicio = idServicio,
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
                 )
             }
         }
