@@ -270,6 +270,51 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+## ¿Dónde se guardan los datos?
+
+### En el servidor (base de datos del backend)
+
+Todos los datos de la plataforma se almacenan en la base de datos del backend, **no en el dispositivo**:
+
+| Datos | Dónde viven |
+|---|---|
+| Usuarios (clientes y proveedores) | Base de datos del backend |
+| Servicios publicados | Base de datos del backend |
+| Solicitudes | Base de datos del backend |
+| Calificaciones | Base de datos del backend |
+| Categorías | Base de datos del backend |
+
+La app **nunca guarda** esta información localmente. Cada vez que abres una pantalla, los datos se piden al servidor via la API REST (`http://10.0.2.2:4000/api/`). Si el backend no está corriendo, la app no muestra nada.
+
+### En el dispositivo (DataStore)
+
+La app solo guarda dos preferencias locales usando **Jetpack DataStore**:
+
+| Dato | Archivo DataStore | Clave |
+|---|---|---|
+| Token JWT (sesión) | `urbify_session` | `jwt_token` |
+| Tema claro/oscuro | `urbify_prefs` | `dark_theme` |
+
+El token JWT permite que la app recuerde tu sesión aunque la cierres. Al hacer "Cerrar sesión" el token se borra del DataStore.
+
+### ¿Qué base de datos usa el backend?
+
+Depende de cómo está configurado el backend. Para saberlo:
+
+1. Abre el directorio del backend y busca el archivo `.env`:
+   ```
+   DB_HOST=...
+   DATABASE_URL=...
+   ```
+2. O revisa el archivo de configuración de base de datos:
+   - `database.js`
+   - `db.js`
+   - `config/database.js`
+
+Los backends Node.js más comunes usan **MongoDB**, **PostgreSQL** o **MySQL**.
+
+---
+
 ## Permisos del dispositivo
 
 ```xml
