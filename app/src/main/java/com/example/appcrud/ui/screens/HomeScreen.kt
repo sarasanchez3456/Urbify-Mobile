@@ -48,10 +48,12 @@ fun HomeScreen(
     onToggleDarkTheme: () -> Unit = {},
     isDarkTheme: Boolean = false,
     onBusqueda: (String) -> Unit = {},
+    onCategoriaClick: (com.example.appcrud.data.model.Categoria) -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val sessionState by sessionViewModel.state.collectAsState()
+    var busqueda by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.cargarDatos()
@@ -122,11 +124,18 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { onBusqueda(it) },
+                    value = busqueda,
+                    onValueChange = { busqueda = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Buscar un servicio") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (busqueda.isNotBlank()) {
+                            IconButton(onClick = { onBusqueda(busqueda) }) {
+                                Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White)
+                            }
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color.White.copy(alpha = 0.15f),
@@ -140,7 +149,13 @@ fun HomeScreen(
                         unfocusedLeadingIconColor = Color.White.copy(alpha = 0.7f),
                         focusedLeadingIconColor = Color.White
                     ),
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Search
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onSearch = { if (busqueda.isNotBlank()) onBusqueda(busqueda) }
+                    )
                 )
             }
         }
@@ -227,7 +242,7 @@ fun HomeScreen(
                         items(uiState.categorias) { categoria ->
                             CategoriaIcon(
                                 categoria = categoria,
-                                onClick = onCatalogo
+                                onClick = { onCategoriaClick(categoria) }
                             )
                         }
                     }

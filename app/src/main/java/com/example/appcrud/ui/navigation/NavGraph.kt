@@ -13,13 +13,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.screens.*
 import com.example.appcrud.ui.viewmodel.SessionViewModel
+import com.google.gson.Gson
 
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
-    const val CATALOGO = "catalogo"
+    const val CATALOGO = "catalogo?query={query}&categoriaId={categoriaId}"
     const val PROVEEDORES_CERCANOS = "proveedores_cercanos"
     const val STATS = "stats"
     const val CREATE_SOLICITUD = "create_solicitud/{idServicio}/{tituloServicio}"
@@ -31,6 +33,10 @@ object Routes {
     const val MIS_SERVICIOS = "mis_servicios"
     const val CREAR_SERVICIO = "crear_servicio"
     const val EDITAR_SERVICIO = "editar_servicio/{idServicio}"
+    const val DETALLE_SOLICITUD = "detalle_solicitud/{esProveedor}/{solicitudJson}"
+
+    fun catalogo(query: String = "", categoriaId: Int = -1) =
+        "catalogo?query=${java.net.URLEncoder.encode(query, "UTF-8")}&categoriaId=$categoriaId"
 
     fun createSolicitud(idServicio: Int, tituloServicio: String) =
         "create_solicitud/$idServicio/${java.net.URLEncoder.encode(tituloServicio, "UTF-8")}"
@@ -42,6 +48,11 @@ object Routes {
         "historial_calificaciones/$proveedorId/${java.net.URLEncoder.encode(nombreProveedor, "UTF-8")}"
 
     fun editarServicio(idServicio: Int) = "editar_servicio/$idServicio"
+
+    fun detalleSolicitud(solicitud: Solicitud, esProveedor: Boolean): String {
+        val json = java.net.URLEncoder.encode(Gson().toJson(solicitud), "UTF-8")
+        return "detalle_solicitud/$esProveedor/$json"
+    }
 }
 
 private val bottomBarRoutes = setOf(
@@ -104,19 +115,9 @@ fun AppNavGraph(
             composable(Routes.HOME) {
                 HomeScreen(
                     sessionViewModel = sessionViewModel,
-                    onCatalogo = {
-                        navController.navigate(Routes.CATALOGO) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onProveedoresCercanos = {
-                        navController.navigate(Routes.PROVEEDORES_CERCANOS)
-                    },
-                    onStats = {
-                        navController.navigate(Routes.STATS)
-                    },
+                    onCatalogo = { navController.navigate(Routes.catalogo()) },
+                    onProveedoresCercanos = { navController.navigate(Routes.PROVEEDORES_CERCANOS) },
+                    onStats = { navController.navigate(Routes.STATS) },
                     onCreateSolicitud = { idServicio, titulo ->
                         navController.navigate(Routes.createSolicitud(idServicio, titulo))
                     },
@@ -138,29 +139,47 @@ fun AppNavGraph(
                         navController.navigate(Routes.historialCalificaciones(proveedorId, nombre))
                     },
                     onToggleDarkTheme = onToggleDarkTheme,
-                    isDarkTheme = isDarkTheme
-                )
-            }
-
-            composable(Routes.CATALOGO) {
-                CatalogoScreen(
-                    onBack = { navController.popBackStack() },
-                    onServicioSelected = { idServicio, titulo ->
-                        navController.navigate(Routes.createSolicitud(idServicio, titulo))
+                    isDarkTheme = isDarkTheme,
+                    onBusqueda = { query ->
+                        navController.navigate(Routes.catalogo(query = query)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onCategoriaClick = { categoria ->
+                        navController.navigate(Routes.catalogo(categoriaId = categoria.idCategoria ?: -1)) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
 
-            composable(Routes.PROVEEDORES_CERCANOS) {
-                ProveedoresCercanosScreen(
-                    onBack = { navController.popBackStack() }
+            composable(
+                route = Routes.CATALOGO,
+                arguments = listOf(
+                    navArgument("query") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("categoriaId") { type = NavType.IntType; defaultValue = -1 }
+                )
+            ) { backStackEntry ->
+                val query = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("query") ?: "", "UTF-8"
+                )
+                val categoriaId = backStackEntry.arguments?.getInt("categoriaId") ?: -1
+                CatalogoScreen(
+                    onBack = { navController.popBackStack() },
+                    onServicioSelected = { idServicio, titulo ->
+                        navController.navigate(Routes.createSolicitud(idServicio, titulo))
+                    },
+                    queryInicial = query,
+                    categoriaIdInicial = categoriaId
                 )
             }
 
+            composable(Routes.PROVEEDORES_CERCANOS) {
+                ProveedoresCercanosScreen(onBack = { navController.popBackStack() })
+            }
+
             composable(Routes.STATS) {
-                StatsScreen(
-                    onBack = { navController.popBackStack() }
-                )
+                StatsScreen(onBack = { navController.popBackStack() })
             }
 
             composable(
@@ -172,8 +191,7 @@ fun AppNavGraph(
             ) { backStackEntry ->
                 val idServicio = backStackEntry.arguments?.getInt("idServicio") ?: 0
                 val tituloServicio = java.net.URLDecoder.decode(
-                    backStackEntry.arguments?.getString("tituloServicio") ?: "",
-                    "UTF-8"
+                    backStackEntry.arguments?.getString("tituloServicio") ?: "", "UTF-8"
                 )
                 CreateSolicitudScreen(
                     idServicio = idServicio,
@@ -188,13 +206,19 @@ fun AppNavGraph(
                     onBack = { navController.popBackStack() },
                     onCalificar = { idSolicitud, idProveedor, titulo ->
                         navController.navigate(Routes.calificar(idSolicitud, idProveedor, titulo))
+                    },
+                    onDetalle = { solicitud, esProveedor ->
+                        navController.navigate(Routes.detalleSolicitud(solicitud, esProveedor))
                     }
                 )
             }
 
             composable(Routes.MIS_SOLICITUDES_PROVEEDOR) {
                 MisSolicitudesProveedorScreen(
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onDetalle = { solicitud ->
+                        navController.navigate(Routes.detalleSolicitud(solicitud, esProveedor = true))
+                    }
                 )
             }
 
@@ -209,8 +233,7 @@ fun AppNavGraph(
                 val idSolicitud = backStackEntry.arguments?.getInt("idSolicitud") ?: 0
                 val idProveedor = backStackEntry.arguments?.getInt("idProveedor") ?: 0
                 val tituloServicio = java.net.URLDecoder.decode(
-                    backStackEntry.arguments?.getString("tituloServicio") ?: "",
-                    "UTF-8"
+                    backStackEntry.arguments?.getString("tituloServicio") ?: "", "UTF-8"
                 )
                 CalificarScreen(
                     idSolicitud = idSolicitud,
@@ -230,8 +253,7 @@ fun AppNavGraph(
             ) { backStackEntry ->
                 val proveedorId = backStackEntry.arguments?.getInt("proveedorId") ?: 0
                 val nombreProveedor = java.net.URLDecoder.decode(
-                    backStackEntry.arguments?.getString("nombreProveedor") ?: "",
-                    "UTF-8"
+                    backStackEntry.arguments?.getString("nombreProveedor") ?: "", "UTF-8"
                 )
                 HistorialCalificacionesScreen(
                     proveedorId = proveedorId,
@@ -257,9 +279,7 @@ fun AppNavGraph(
             composable(Routes.MIS_SERVICIOS) {
                 MisServiciosScreen(
                     onCrear = { navController.navigate(Routes.CREAR_SERVICIO) },
-                    onEditar = { idServicio ->
-                        navController.navigate(Routes.editarServicio(idServicio))
-                    }
+                    onEditar = { idServicio -> navController.navigate(Routes.editarServicio(idServicio)) }
                 )
             }
 
@@ -275,11 +295,34 @@ fun AppNavGraph(
                 route = Routes.EDITAR_SERVICIO,
                 arguments = listOf(navArgument("idServicio") { type = NavType.IntType })
             ) { backStackEntry ->
-                val idServicio = backStackEntry.arguments?.getInt("idServicio")
                 CreateEditServicioScreen(
-                    idServicio = idServicio,
+                    idServicio = backStackEntry.arguments?.getInt("idServicio"),
                     onBack = { navController.popBackStack() },
                     onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            // ── Detalle de solicitud ─────────────────────────────────────────
+
+            composable(
+                route = Routes.DETALLE_SOLICITUD,
+                arguments = listOf(
+                    navArgument("esProveedor") { type = NavType.BoolType },
+                    navArgument("solicitudJson") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val esProveedor = backStackEntry.arguments?.getBoolean("esProveedor") ?: false
+                val json = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("solicitudJson") ?: "{}", "UTF-8"
+                )
+                val solicitud = Gson().fromJson(json, Solicitud::class.java)
+                DetalleSolicitudScreen(
+                    solicitud = solicitud,
+                    esProveedor = esProveedor,
+                    onBack = { navController.popBackStack() },
+                    onCalificar = { idSolicitud, idProveedor, titulo ->
+                        navController.navigate(Routes.calificar(idSolicitud, idProveedor, titulo))
+                    }
                 )
             }
         }

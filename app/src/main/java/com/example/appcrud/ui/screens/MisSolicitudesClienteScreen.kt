@@ -1,5 +1,6 @@
 package com.example.appcrud.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +25,7 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 fun MisSolicitudesClienteScreen(
     onBack: () -> Unit,
     onCalificar: (Int, Int, String) -> Unit,
+    onDetalle: (Solicitud, Boolean) -> Unit = { _, _ -> },
     viewModel: SolicitudViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -112,6 +114,7 @@ fun MisSolicitudesClienteScreen(
                             if (mostrarProveedor) {
                                 SolicitudProveedorInlineCard(
                                     solicitud = solicitud,
+                                    onClick = { onDetalle(solicitud, true) },
                                     onAceptar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.ACEPTADA) },
                                     onRechazar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.RECHAZADA) },
                                     onIniciar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.EN_PROCESO) },
@@ -120,6 +123,7 @@ fun MisSolicitudesClienteScreen(
                             } else {
                                 SolicitudClienteCard(
                                     solicitud = solicitud,
+                                    onClick = { onDetalle(solicitud, false) },
                                     onCalificar = onCalificar,
                                     onCancelar = { id -> viewModel.cambiarEstado(id, EstadoSolicitud.CANCELADA) }
                                 )
@@ -135,6 +139,7 @@ fun MisSolicitudesClienteScreen(
 @Composable
 private fun SolicitudClienteCard(
     solicitud: Solicitud,
+    onClick: () -> Unit,
     onCalificar: (Int, Int, String) -> Unit,
     onCancelar: (Int) -> Unit
 ) {
@@ -149,7 +154,7 @@ private fun SolicitudClienteCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -256,6 +261,7 @@ private fun SolicitudClienteCard(
 @Composable
 private fun SolicitudProveedorInlineCard(
     solicitud: Solicitud,
+    onClick: () -> Unit,
     onAceptar: () -> Unit,
     onRechazar: () -> Unit,
     onIniciar: () -> Unit,
@@ -272,7 +278,7 @@ private fun SolicitudProveedorInlineCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

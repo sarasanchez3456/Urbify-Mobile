@@ -59,6 +59,11 @@ class CatalogoViewModel : ViewModel() {
         }
     }
 
+    fun seleccionarCategoriaById(id: Int) {
+        val categoria = _uiState.value.categorias.firstOrNull { it.idCategoria == id } ?: return
+        seleccionarCategoria(categoria)
+    }
+
     fun seleccionarCategoria(categoria: Categoria) {
         _uiState.value = _uiState.value.copy(categoriaSeleccionada = categoria)
         viewModelScope.launch {

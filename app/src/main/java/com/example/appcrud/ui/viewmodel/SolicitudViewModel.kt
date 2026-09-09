@@ -23,33 +23,24 @@ class SolicitudViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(SolicitudUiState())
     val uiState: StateFlow<SolicitudUiState> = _uiState.asStateFlow()
 
+    // tracks which list was loaded so we can reload after any state change
+    private var modoActual = "cliente"
+
     fun loadSolicitudesCliente() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val solicitudes = repository.getSolicitudesCliente()
-                _uiState.value = _uiState.value.copy(
-                    solicitudes = solicitudes,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al cargar solicitudes"
-                )
-            }
-        }
+        modoActual = "cliente"
+        cargar { repository.getSolicitudesCliente() }
     }
 
     fun loadSolicitudesProveedor() {
+        modoActual = "proveedor"
+        cargar { repository.getSolicitudesProveedor() }
+    }
+
+    private fun cargar(bloque: suspend () -> List<Solicitud>) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val solicitudes = repository.getSolicitudesProveedor()
-                _uiState.value = _uiState.value.copy(
-                    solicitudes = solicitudes,
-                    isLoading = false
-                )
+                _uiState.value = _uiState.value.copy(solicitudes = bloque(), isLoading = false)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -59,31 +50,15 @@ class SolicitudViewModel : ViewModel() {
         }
     }
 
-    fun createSolicitud(
-        idServicio: Int,
-        mensaje: String,
-        direccion: String,
-        onSuccess: () -> Unit
-    ) {
+    fun createSolicitud(idServicio: Int, mensaje: String, direccion: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val solicitud = Solicitud(
-                    idServicio = idServicio,
-                    mensaje = mensaje,
-                    direccion = direccion
-                )
-                repository.createSolicitud(solicitud)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    successMessage = "Solicitud creada exitosamente"
-                )
+                repository.createSolicitud(Solicitud(idServicio = idServicio, mensaje = mensaje, direccion = direccion))
+                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")
                 onSuccess()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al crear solicitud"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error al crear solicitud")
             }
         }
     }
@@ -93,15 +68,18 @@ class SolicitudViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 repository.cambiarEstado(id, nuevoEstado)
+                // reload list so cards reflect the new state immediately
+                val actualizadas = if (modoActual == "proveedor")
+                    repository.getSolicitudesProveedor()
+                else
+                    repository.getSolicitudesCliente()
                 _uiState.value = _uiState.value.copy(
+                    solicitudes = actualizadas,
                     isLoading = false,
-                    successMessage = "Estado actualizado a $nuevoEstado"
+                    successMessage = "Estado actualizado"
                 )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al cambiar estado"
-                )
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error al cambiar estado")
             }
         }
     }

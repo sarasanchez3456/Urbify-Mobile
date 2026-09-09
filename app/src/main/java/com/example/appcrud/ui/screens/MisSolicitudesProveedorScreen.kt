@@ -1,5 +1,6 @@
 package com.example.appcrud.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 @Composable
 fun MisSolicitudesProveedorScreen(
     onBack: () -> Unit,
+    onDetalle: (Solicitud) -> Unit = {},
     viewModel: SolicitudViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -90,30 +92,11 @@ fun MisSolicitudesProveedorScreen(
                     items(uiState.solicitudes) { solicitud ->
                         SolicitudProveedorCard(
                             solicitud = solicitud,
-                            onAceptar = {
-                                viewModel.cambiarEstado(
-                                    solicitud.idSolicitud!!,
-                                    EstadoSolicitud.ACEPTADA
-                                )
-                            },
-                            onRechazar = {
-                                viewModel.cambiarEstado(
-                                    solicitud.idSolicitud!!,
-                                    EstadoSolicitud.RECHAZADA
-                                )
-                            },
-                            onIniciar = {
-                                viewModel.cambiarEstado(
-                                    solicitud.idSolicitud!!,
-                                    EstadoSolicitud.EN_PROCESO
-                                )
-                            },
-                            onCompletar = {
-                                viewModel.cambiarEstado(
-                                    solicitud.idSolicitud!!,
-                                    EstadoSolicitud.COMPLETADA
-                                )
-                            }
+                            onClick = { onDetalle(solicitud) },
+                            onAceptar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.ACEPTADA) },
+                            onRechazar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.RECHAZADA) },
+                            onIniciar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.EN_PROCESO) },
+                            onCompletar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.COMPLETADA) }
                         )
                     }
                 }
@@ -125,6 +108,7 @@ fun MisSolicitudesProveedorScreen(
 @Composable
 private fun SolicitudProveedorCard(
     solicitud: Solicitud,
+    onClick: () -> Unit,
     onAceptar: () -> Unit,
     onRechazar: () -> Unit,
     onIniciar: () -> Unit,
@@ -141,7 +125,7 @@ private fun SolicitudProveedorCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

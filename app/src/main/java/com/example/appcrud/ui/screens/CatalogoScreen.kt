@@ -31,10 +31,22 @@ import com.example.appcrud.ui.viewmodel.CatalogoViewModel
 fun CatalogoScreen(
     onBack: () -> Unit,
     onServicioSelected: (idServicio: Int, tituloServicio: String) -> Unit,
+    queryInicial: String = "",
+    categoriaIdInicial: Int = -1,
     viewModel: CatalogoViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var busqueda by remember { mutableStateOf("") }
+    var busqueda by remember { mutableStateOf(queryInicial) }
+
+    // apply deep-link params once categories are loaded
+    LaunchedEffect(queryInicial) {
+        if (queryInicial.isNotBlank()) viewModel.buscarServicios(queryInicial)
+    }
+    LaunchedEffect(categoriaIdInicial, uiState.categorias.size) {
+        if (categoriaIdInicial > 0 && uiState.categorias.isNotEmpty()) {
+            viewModel.seleccionarCategoriaById(categoriaIdInicial)
+        }
+    }
 
     Scaffold(
         topBar = {
