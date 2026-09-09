@@ -18,19 +18,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.data.location.LocationProvider
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.viewmodel.ProveedoresCercanosViewModel
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,9 +53,7 @@ fun ProveedoresCercanosScreen(
     fun fetchUbicacionYCargar() {
         scope.launch {
             val location = locationProvider.getCurrentLocation()
-            if (location != null) {
-                viewModel.cargar(location.latitude, location.longitude)
-            }
+            if (location != null) viewModel.cargar(location.latitude, location.longitude)
         }
     }
 
@@ -83,9 +80,7 @@ fun ProveedoresCercanosScreen(
             )
         }
     ) { padding ->
-        Column(
-            modifier = Modifier.padding(padding).fillMaxSize()
-        ) {
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -173,31 +168,74 @@ private fun MapaProveedores(
     userLat: Double,
     userLng: Double
 ) {
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(userLat, userLng), 13f)
-    }
+    val mapView = rememberOsmMapView(userLat, userLng, proveedores)
 
-    GoogleMap(
-        modifier = Modifier.fillMaxSize(),
-        cameraPositionState = cameraPositionState
-    ) {
-        Marker(
-            state = MarkerState(position = LatLng(userLat, userLng)),
-            title = "Tu ubicación"
-        )
-        proveedores.forEach { proveedor ->
-            if (proveedor.latitud != null && proveedor.longitud != null) {
-                val rating = if (proveedor.totalCalificaciones > 0)
-                    " ★ ${String.format("%.1f", proveedor.calificacionPromedio)}"
-                else ""
-                Marker(
-                    state = MarkerState(position = LatLng(proveedor.latitud, proveedor.longitud)),
-                    title = "${proveedor.nombre} ${proveedor.apellido}",
-                    snippet = "${proveedor.distanciaKm?.let { "a ${formatKm(it)} km" } ?: ""}$rating"
-                )
-            }
+    AndroidView(
+        factory = { mapView },
+        modifier = Modifier.fillMaxSize()
+    )
+}
+
+@Composable
+private fun rememberOsmMapView(
+    userLat: Double,
+    userLng: Double,
+    proveedores: List<ProveedorCercano>
+): MapView {
+    val context = LocalContext.current
+
+    val mapView = remember {
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            isTilesScaledToDpi = true
         }
     }
+
+    DisposableEffect(Unit) {
+        mapView.onResume()
+        onDispose {
+            mapView.onPause()
+            mapView.onDetach()
+        }
+    }
+
+    LaunchedEffect(userLat, userLng, proveedores) {
+        mapView.controller.setZoom(13.0)
+        mapView.controller.setCenter(GeoPoint(userLat, userLng))
+        mapView.overlays.clear()
+
+        // Marcador de la ubicación del usuario
+        Marker(mapView).apply {
+            position = GeoPoint(userLat, userLng)
+            title = "Tu ubicación"
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            mapView.overlays.add(this)
+        }
+
+        // Marcadores de proveedores
+        proveedores.forEach { proveedor ->
+            if (proveedor.latitud != null && proveedor.longitud != null) {
+                Marker(mapView).apply {
+                    position = GeoPoint(proveedor.latitud, proveedor.longitud)
+                    title = "${proveedor.nombre} ${proveedor.apellido}"
+                    snippet = buildString {
+                        proveedor.distanciaKm?.let { append("a ${formatKm(it)} km") }
+                        if (proveedor.totalCalificaciones > 0) {
+                            if (isNotEmpty()) append(" · ")
+                            append("★ ${String.format("%.1f", proveedor.calificacionPromedio)}")
+                        }
+                    }
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    mapView.overlays.add(this)
+                }
+            }
+        }
+
+        mapView.invalidate()
+    }
+
+    return mapView
 }
 
 @Composable
@@ -225,11 +263,9 @@ private fun ProveedorCard(proveedor: ProveedorCercano) {
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = if (proveedor.totalCalificaciones > 0) {
+                text = if (proveedor.totalCalificaciones > 0)
                     "★ ${formatKm(proveedor.calificacionPromedio)} (${proveedor.totalCalificaciones})"
-                } else {
-                    "Sin calificaciones"
-                },
+                else "Sin calificaciones",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

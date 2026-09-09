@@ -54,7 +54,7 @@ Aplicación Android para la plataforma **Urbify** — marketplace de servicios u
 | Estado | ViewModel + StateFlow |
 | Persistencia | DataStore Preferences (token JWT + preferencia de tema) |
 | HTTP | Retrofit 2 + OkHttp + Gson |
-| Mapas | Google Maps SDK + Maps Compose |
+| Mapas | OpenStreetMap via OSMDroid (sin API key) |
 | Ubicación | Google Play Services Location |
 | Lenguaje | Kotlin |
 | Build | Gradle con Kotlin DSL |
@@ -68,51 +68,7 @@ Aplicación Android para la plataforma **Urbify** — marketplace de servicios u
 - **Android SDK** con API Level 24+ instalado
 - **Emulador** Android o dispositivo físico con Android 7.0+
 - **Backend Urbify** corriendo localmente en el puerto `4000`
-- **API Key de Google Maps** (solo necesaria para usar la vista de mapa)
-
----
-
-## Configuración de Google Maps (obligatorio para la vista de mapa)
-
-### 1. Obtener una API Key
-
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/).
-2. Crea un proyecto nuevo o selecciona uno existente.
-3. En el menú lateral ve a **APIs y servicios → Biblioteca**.
-4. Busca **Maps SDK for Android** y actívalo.
-5. Ve a **APIs y servicios → Credenciales → Crear credencial → Clave de API**.
-6. Copia la clave generada.
-
-### 2. Restringir la clave (recomendado)
-
-En la configuración de la clave:
-- **Restricción de aplicación**: Aplicaciones Android
-- Agrega el paquete `com.example.appcrud` y la huella SHA-1 del certificado de debug:
-
-```bash
-# Obtener la huella SHA-1 del keystore de debug
-keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
-```
-
-### 3. Agregar la clave al proyecto
-
-Abre el archivo `app/src/main/AndroidManifest.xml` y reemplaza el valor del placeholder:
-
-```xml
-<meta-data
-    android:name="com.google.android.geo.API_KEY"
-    android:value="YOUR_MAPS_API_KEY_HERE" />   <!-- reemplaza este valor -->
-```
-
-Por tu clave real:
-
-```xml
-<meta-data
-    android:name="com.google.android.geo.API_KEY"
-    android:value="AIzaSy_TU_CLAVE_AQUI" />
-```
-
-> **Nunca subas la API key al repositorio.** Para proyectos de producción, usa `local.properties` + `buildConfigField` para mantenerla fuera del control de versiones.
+- **Conexión a internet** (para cargar los tiles del mapa OpenStreetMap)
 
 ---
 
@@ -138,11 +94,7 @@ Si usas un **dispositivo físico** (no emulador), cambia la `BASE_URL` en `Retro
 private const val BASE_URL = "http://192.168.x.x:4000/api/"
 ```
 
-### 2. API Key de Google Maps
-
-Sigue los pasos de la sección anterior antes de ejecutar la app. Sin la API key el resto de la app funciona con normalidad, pero la pestaña **Mapa** en Proveedores Cercanos mostrará una pantalla en blanco.
-
-### 3. App Android
+### 2. App Android
 
 1. Abre el proyecto en Android Studio (`File → Open → Urbify-Mobile`).
 2. Espera a que Gradle sincronice las dependencias (descarga automática ~primera vez 2-5 min).
