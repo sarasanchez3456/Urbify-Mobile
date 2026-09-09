@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.repository.CategoriaRepository
-import com.example.appcrud.data.repository.SolicitudRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,14 +24,12 @@ data class CatalogoUiState(
 class CatalogoViewModel : ViewModel() {
 
     private val categoriaRepository = CategoriaRepository()
-    private val solicitudRepository = SolicitudRepository()
 
     private val _uiState = MutableStateFlow(CatalogoUiState())
     val uiState: StateFlow<CatalogoUiState> = _uiState.asStateFlow()
 
     init {
         cargarCategorias()
-        cargarDestacados()
     }
 
     fun cargarCategorias() {
@@ -47,15 +44,6 @@ class CatalogoViewModel : ViewModel() {
                     error = e.message ?: "Error al cargar categorías"
                 )
             }
-        }
-    }
-
-    fun cargarDestacados() {
-        viewModelScope.launch {
-            try {
-                val servicios = solicitudRepository.getSolicitudesCliente()
-                _uiState.value = _uiState.value.copy(serviciosDestacados = emptyList())
-            } catch (_: Exception) {}
         }
     }
 

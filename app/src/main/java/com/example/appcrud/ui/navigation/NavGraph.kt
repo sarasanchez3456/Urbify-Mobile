@@ -86,7 +86,8 @@ fun AppNavGraph(
                     currentRoute = currentRoute,
                     rol = sessionState.usuario?.rol,
                     onNavigate = { route ->
-                        navController.navigate(route) {
+                        val resolvedRoute = if (route == Routes.CATALOGO) Routes.catalogo() else route
+                        navController.navigate(resolvedRoute) {
                             popUpTo(Routes.HOME) { saveState = true }
                             launchSingleTop = true
                             restoreState = true

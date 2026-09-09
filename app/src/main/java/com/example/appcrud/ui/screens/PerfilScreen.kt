@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,11 +65,10 @@ fun PerfilScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { modoEdicion = !modoEdicion }) {
-                        Icon(
-                            imageVector = if (modoEdicion) Icons.Default.Save else Icons.Default.Edit,
-                            contentDescription = if (modoEdicion) "Guardar" else "Editar"
-                        )
+                    if (!modoEdicion) {
+                        IconButton(onClick = { modoEdicion = true }) {
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar")
+                        }
                     }
                 }
             )

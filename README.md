@@ -4,120 +4,228 @@ Aplicación Android para la plataforma **Urbify** — marketplace de servicios u
 
 ---
 
+## Requisitos para ejecutar el proyecto
+
+### Software obligatorio
+
+| Herramienta | Versión mínima | Descarga |
+|---|---|---|
+| Android Studio | Hedgehog (2023.1.1) o superior | [developer.android.com/studio](https://developer.android.com/studio) |
+| JDK | 11 | Incluido en Android Studio |
+| Android SDK | API 24 (Android 7.0) | Se instala desde Android Studio |
+| Git | Cualquiera reciente | [git-scm.com](https://git-scm.com) |
+
+### Android Studio — SDK Manager
+
+Al abrir el proyecto por primera vez, Android Studio pedirá instalar el SDK. Asegúrate de tener:
+
+- `Android SDK Platform 37` (o 24+)
+- `Android SDK Build-Tools`
+- `Google Play Services` (necesario para GPS)
+
+Ve a `File → Settings → Appearance & Behavior → System Settings → Android SDK` y activa lo anterior.
+
+---
+
+## Cómo clonar y abrir el proyecto
+
+```bash
+git clone https://github.com/sarasanchez3456/Urbify-Mobile.git
+cd Urbify-Mobile
+```
+
+1. Abre Android Studio
+2. `File → Open` → selecciona la carpeta `Urbify-Mobile`
+3. Espera a que Gradle sincronice (primera vez descarga ~200 MB de dependencias)
+4. Si aparece el banner **"Gradle files have changed"** → clic en **Sync Now**
+
+---
+
+## Dependencias — se descargan automáticamente con Gradle
+
+No hay que instalar nada manualmente. Gradle descarga todo al sincronizar:
+
+| Librería | Uso |
+|---|---|
+| Jetpack Compose BOM | UI declarativa |
+| Navigation Compose | Navegación entre pantallas |
+| Material3 | Componentes visuales |
+| Retrofit 2 + OkHttp | Llamadas a la API REST |
+| Gson | Serialización JSON |
+| DataStore Preferences | Persistencia local (JWT + tema) |
+| Coil | Carga de imágenes |
+| OSMDroid 6.1.18 | Mapa de proveedores cercanos (OpenStreetMap, sin API key) |
+| Google Play Services Location | GPS para ubicación del usuario |
+| ViewModel + StateFlow | Manejo de estado |
+
+---
+
+## Backend — requisito para que la app funcione
+
+La app necesita el servidor Urbify corriendo. Sin backend no carga ninguna pantalla.
+
+```bash
+# En el directorio del backend
+npm install
+npm start
+# Debe quedar escuchando en el puerto 4000
+```
+
+### URL base configurada
+
+El cliente apunta a `http://10.0.2.2:4000/api/` que es la IP del emulador para acceder a `localhost` del PC host.
+
+**Si usas dispositivo físico** (no emulador), cambia la `BASE_URL` en `RetrofitClient.kt`:
+
+```kotlin
+// app/src/main/java/com/example/appcrud/data/api/RetrofitClient.kt
+private const val BASE_URL = "http://192.168.X.X:4000/api/"
+// Reemplaza con la IP local de tu PC en la red WiFi
+```
+
+Para saber tu IP local:
+- **Windows**: `ipconfig` en la terminal
+- **Mac/Linux**: `ifconfig | grep inet` o `ip addr`
+
+---
+
+## Ejecutar la app
+
+1. Conecta un emulador o dispositivo físico con Android 7.0+
+2. Asegúrate de que el backend esté corriendo
+3. Presiona **Run ▶** en Android Studio o `Shift + F10`
+
+---
+
 ## Funcionalidades implementadas
 
-### Módulo de autenticación
-- Login y registro con JWT persistido en DataStore
-- `SessionViewModel` compartido en toda la app (nombre, rol, id del usuario)
+### Autenticación
+- Login y registro con JWT
+- Token persistido en DataStore — sobrevive al cierre de la app
+- `SessionViewModel` compartido en toda la app (nombre, rol, id)
 - Pantalla de perfil con edición de datos y cierre de sesión
 
 ### Navegación por rol
 - **Cliente**: Home → Catálogo → Mis Solicitudes → Perfil
 - **Proveedor**: Home → Mis Servicios → Solicitudes Recibidas → Perfil
-- Bottom bar se adapta automáticamente según el rol
+- Bottom bar se adapta automáticamente según el rol registrado
+
+### Home
+- Dashboard con solicitudes activas y completadas
+- Buscador que navega al catálogo con el término escrito
+- Acceso rápido a categorías con filtro automático
+- Proveedores destacados
+
+### Catálogo y búsqueda
+- Lista de categorías clicables
+- Búsqueda por texto en tiempo real
+- Filtro por categoría desde Home o desde el catálogo
+
+### Solicitudes
+- Cliente crea solicitudes desde el catálogo
+- Vista de detalle con acciones según estado y rol
+- Cliente puede cancelar solicitudes en estado pendiente
+- Proveedor puede aceptar, rechazar, iniciar y completar
+- Historial separado para cliente y proveedor
+
+### Calificaciones
+- El cliente califica al proveedor cuando se completa un servicio
+- El cliente puede **editar** su calificación (estrellas + comentario)
+- El cliente puede **eliminar** su calificación
+- Historial con promedio y todas las opiniones
+
+### Proveedores cercanos
+- Lista de proveedores ordenada por distancia (requiere permiso GPS)
+- **Vista de mapa interactivo** con OpenStreetMap (sin API key)
+- Pin en la ubicación del usuario + marcadores por proveedor
+- Toggle Lista / Mapa en la misma pantalla
+- Filtro de radio: 2 km, 5 km, 10 km
 
 ### CRUD de servicios (Proveedor)
 - Listar, crear, editar y eliminar servicios propios
 - Selector de categoría con dropdown
+- Confirmación antes de eliminar
 
-### Solicitudes
-- Clientes pueden crear solicitudes desde el catálogo
-- Vista de detalle con acciones según estado (aceptar, rechazar, iniciar, completar, cancelar)
-- Historial separado para cliente y proveedor
-
-### Calificaciones
-- El cliente califica al proveedor al completarse un servicio
-- El cliente puede **editar** o **eliminar** su propia calificación desde el historial
-- Historial con promedio y estrellas
-
-### Proveedores cercanos
-- Lista de proveedores ordenada por distancia (GPS)
-- **Vista de mapa** con pin en la ubicación del usuario y marcadores para cada proveedor
-- Filtro de radio: 2 km, 5 km, 10 km
-- Toggle Lista / Mapa en la misma pantalla
-
-### Buscador y filtro por categoría
-- Barra de búsqueda en Home navega al catálogo con el término
-- Click en categoría filtra el catálogo directamente
-
-### Tema claro / oscuro persistido
-- El toggle de tema se guarda en DataStore y sobrevive al cierre de la app
+### Tema claro / oscuro
+- Toggle en el Home
+- Preferencia guardada en DataStore — persiste entre sesiones
 
 ---
 
-## Stack tecnológico
+## Estructura del proyecto
 
-| Capa | Tecnología |
-|---|---|
-| UI | Jetpack Compose + Material3 |
-| Navegación | Navigation Compose |
-| Estado | ViewModel + StateFlow |
-| Persistencia | DataStore Preferences (token JWT + preferencia de tema) |
-| HTTP | Retrofit 2 + OkHttp + Gson |
-| Mapas | OpenStreetMap via OSMDroid (sin API key) |
-| Ubicación | Google Play Services Location |
-| Lenguaje | Kotlin |
-| Build | Gradle con Kotlin DSL |
-
----
-
-## Requisitos previos
-
-- **Android Studio** Hedgehog o superior
-- **JDK 11**
-- **Android SDK** con API Level 24+ instalado
-- **Emulador** Android o dispositivo físico con Android 7.0+
-- **Backend Urbify** corriendo localmente en el puerto `4000`
-- **Conexión a internet** (para cargar los tiles del mapa OpenStreetMap)
-
----
-
-## Cómo ejecutar
-
-### 1. Backend
-
-El cliente HTTP apunta a `http://10.0.2.2:4000/api/` — esta IP es la forma en que el emulador de Android accede a `localhost` del equipo host.
-
-Levanta el servidor backend antes de lanzar la app:
-
-```bash
-# Desde el directorio del backend
-npm install
-npm start
-# El servidor debe quedar escuchando en el puerto 4000
+```
+app/src/main/java/com/example/appcrud/
+│
+├── data/
+│   ├── api/
+│   │   ├── ApiService.kt               # Todos los endpoints Retrofit
+│   │   └── RetrofitClient.kt           # OkHttp + interceptores (auth, charset)
+│   ├── location/
+│   │   └── LocationProvider.kt         # GPS con FusedLocationProviderClient
+│   ├── model/                          # Data classes de la API
+│   │   ├── Auth.kt                     # LoginRequest, RegistroRequest, AuthResponse
+│   │   ├── AuthError.kt                # Error de auth con bloqueo por intentos
+│   │   ├── Calificacion.kt
+│   │   ├── Categoria.kt
+│   │   ├── ProveedorCercano.kt         # Incluye latitud/longitud para el mapa
+│   │   ├── Servicio.kt
+│   │   ├── Solicitud.kt                # + EstadoSolicitud + EstadoUpdateRequest
+│   │   ├── Stats.kt
+│   │   └── Usuario.kt                  # + object Rol
+│   ├── repository/                     # Una clase por dominio, llaman a ApiService
+│   └── session/
+│       ├── TokenManager.kt             # JWT en DataStore + caché en memoria
+│       └── ThemeManager.kt             # Preferencia de tema en DataStore
+│
+├── ui/
+│   ├── components/
+│   │   ├── EmptyState.kt               # Pantalla vacía reutilizable
+│   │   └── QuickActionCard.kt          # Tarjeta de acción rápida
+│   ├── navigation/
+│   │   ├── NavGraph.kt                 # Todas las rutas + SessionViewModel activity-scoped
+│   │   └── BottomNavigationBar.kt      # Bottom bar adaptable por rol
+│   ├── screens/
+│   │   ├── AuthScreen.kt               # Login + Registro (tabs)
+│   │   ├── HomeScreen.kt               # Dashboard principal
+│   │   ├── PerfilScreen.kt             # Ver/editar perfil + cerrar sesión
+│   │   ├── CatalogoScreen.kt           # Búsqueda y categorías
+│   │   ├── CreateSolicitudScreen.kt    # Nueva solicitud
+│   │   ├── DetalleSolicitudScreen.kt   # Detalle con acciones por estado/rol
+│   │   ├── MisSolicitudesClienteScreen.kt
+│   │   ├── MisSolicitudesProveedorScreen.kt
+│   │   ├── CalificarScreen.kt          # Enviar calificación con estrellas
+│   │   ├── HistorialCalificacionesScreen.kt  # Ver/editar/eliminar calificaciones
+│   │   ├── ProveedoresCercanosScreen.kt      # Lista + mapa OSMDroid
+│   │   ├── MisServiciosScreen.kt       # CRUD de servicios del proveedor
+│   │   ├── CreateEditServicioScreen.kt # Crear o editar servicio
+│   │   └── StatsScreen.kt             # Estadísticas globales
+│   ├── viewmodel/                      # Un ViewModel por pantalla
+│   └── theme/
+│       ├── Color.kt                    # Paleta de marca Urbify (light + dark)
+│       ├── Theme.kt                    # UrbifyTheme + UrbifyPrimaryGradient
+│       └── Type.kt                     # Tipografía
+│
+├── MainActivity.kt                     # Lee tema de DataStore al iniciar
+└── UrbifyApplication.kt               # Inicializa TokenManager, ThemeManager y OSMDroid
 ```
 
-Si usas un **dispositivo físico** (no emulador), cambia la `BASE_URL` en `RetrofitClient.kt`:
-
-```kotlin
-// Reemplaza con la IP local de tu máquina en la red WiFi
-private const val BASE_URL = "http://192.168.x.x:4000/api/"
-```
-
-### 2. App Android
-
-1. Abre el proyecto en Android Studio (`File → Open → Urbify-Mobile`).
-2. Espera a que Gradle sincronice las dependencias (descarga automática ~primera vez 2-5 min).
-3. Agrega tu API Key de Google Maps en `AndroidManifest.xml` (ver sección anterior).
-4. Selecciona un emulador o dispositivo conectado.
-5. Presiona **Run ▶** o `Shift + F10`.
-
 ---
 
-## Endpoints de la API usados
+## Endpoints de la API
 
 ### Autenticación
 | Método | Ruta | Descripción |
 |---|---|---|
-| `POST` | `/api/auth/registro` | Crea una cuenta nueva |
-| `POST` | `/api/auth/login` | Inicia sesión, devuelve JWT + usuario |
-| `GET` | `/api/auth/perfil` | Obtiene el perfil del usuario autenticado |
-| `PUT` | `/api/auth/perfil` | Actualiza datos del perfil |
+| `POST` | `/api/auth/registro` | Crear cuenta |
+| `POST` | `/api/auth/login` | Iniciar sesión → devuelve JWT + usuario |
+| `GET` | `/api/auth/perfil` | Perfil del usuario autenticado |
+| `PUT` | `/api/auth/perfil` | Actualizar datos del perfil |
 
 ### Servicios
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/api/servicios/destacados` | Servicios destacados para el Home |
+| `GET` | `/api/servicios/destacados` | Servicios para el Home |
 | `GET` | `/api/servicios/buscar?q=` | Búsqueda por texto |
 | `GET` | `/api/servicios/categoria/:id` | Filtrar por categoría |
 | `GET` | `/api/servicios/mios` | Servicios del proveedor autenticado |
@@ -130,7 +238,7 @@ private const val BASE_URL = "http://192.168.x.x:4000/api/"
 |---|---|---|
 | `POST` | `/api/solicitudes` | Crear solicitud |
 | `GET` | `/api/solicitudes/cliente` | Solicitudes del cliente |
-| `GET` | `/api/solicitudes/proveedor` | Solicitudes recibidas del proveedor |
+| `GET` | `/api/solicitudes/proveedor` | Solicitudes recibidas |
 | `PUT` | `/api/solicitudes/:id/estado` | Cambiar estado |
 
 ### Calificaciones
@@ -141,76 +249,28 @@ private const val BASE_URL = "http://192.168.x.x:4000/api/"
 | `PUT` | `/api/calificaciones/:id` | Editar calificación propia |
 | `DELETE` | `/api/calificaciones/:id` | Eliminar calificación propia |
 
-### Proveedores
+### Otros
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/api/proveedores/cercanos?lat=&lng=&radio=` | Proveedores cercanos con distancia |
+| `GET` | `/api/categorias` | Lista de categorías |
+| `GET` | `/api/proveedores/cercanos?lat=&lng=&radio=` | Proveedores con distancia |
+| `GET` | `/api/stats` | Estadísticas globales |
 
-Todos los endpoints protegidos reciben el token en el header:
+Todos los endpoints protegidos requieren:
 ```
 Authorization: Bearer <jwt_token>
 ```
 
-### Roles de usuario
-| Rol | Descripción |
+### Roles
+| Rol | Acceso |
 |---|---|
-| `cliente` | Busca servicios, crea solicitudes y califica proveedores |
-| `proveedor` | Gestiona sus servicios y atiende solicitudes |
+| `cliente` | Busca servicios, crea solicitudes, califica proveedores |
+| `proveedor` | Gestiona servicios, atiende solicitudes |
 | `admin` | Acceso administrativo |
 
 ---
 
-## Estructura del proyecto
-
-```
-app/src/main/java/com/example/appcrud/
-├── data/
-│   ├── api/
-│   │   ├── ApiService.kt               # Interfaz Retrofit con todos los endpoints
-│   │   └── RetrofitClient.kt           # OkHttp con interceptores de auth y charset
-│   ├── location/
-│   │   └── LocationProvider.kt         # GPS con Play Services Location
-│   ├── model/                          # Data classes (Usuario, Solicitud, Servicio…)
-│   ├── repository/                     # Repositorios por dominio
-│   └── session/
-│       ├── TokenManager.kt             # DataStore + caché en memoria del JWT
-│       └── ThemeManager.kt             # DataStore para la preferencia de tema
-├── ui/
-│   ├── navigation/
-│   │   ├── NavGraph.kt                 # Rutas, NavHost, SessionViewModel activity-scoped
-│   │   └── BottomNavigationBar.kt      # Bottom bar adaptable por rol
-│   ├── screens/
-│   │   ├── AuthScreen.kt               # Login + Registro (tabs)
-│   │   ├── HomeScreen.kt               # Dashboard con buscador y categorías
-│   │   ├── PerfilScreen.kt             # Ver y editar perfil + cerrar sesión
-│   │   ├── CatalogoScreen.kt           # Búsqueda y catálogo de servicios
-│   │   ├── CreateSolicitudScreen.kt
-│   │   ├── DetalleSolicitudScreen.kt   # Detalle con acciones por estado y rol
-│   │   ├── MisSolicitudesClienteScreen.kt
-│   │   ├── MisSolicitudesProveedorScreen.kt
-│   │   ├── CalificarScreen.kt
-│   │   ├── HistorialCalificacionesScreen.kt  # Con editar/eliminar calificación propia
-│   │   ├── ProveedoresCercanosScreen.kt      # Lista + vista de mapa con Google Maps
-│   │   ├── MisServiciosScreen.kt
-│   │   ├── CreateEditServicioScreen.kt
-│   │   └── StatsScreen.kt
-│   ├── viewmodel/
-│   │   ├── SessionViewModel.kt         # Estado de sesión compartido (usuario + rol)
-│   │   ├── AuthViewModel.kt
-│   │   ├── HomeViewModel.kt
-│   │   ├── SolicitudViewModel.kt
-│   │   ├── CalificacionViewModel.kt
-│   │   ├── ProveedoresCercanosViewModel.kt
-│   │   ├── MisServiciosViewModel.kt
-│   │   └── CreateEditServicioViewModel.kt
-│   └── theme/                          # Colores, tipografía y tema Material3
-├── MainActivity.kt                     # Lee tema de DataStore al iniciar
-└── UrbifyApplication.kt                # Inicializa TokenManager y ThemeManager
-```
-
----
-
-## Permisos requeridos
+## Permisos del dispositivo
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
@@ -219,4 +279,33 @@ app/src/main/java/com/example/appcrud/
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 ```
 
-Los permisos de ubicación son necesarios para la funcionalidad de **Proveedores Cercanos** (lista y mapa). La app los solicita en tiempo de ejecución la primera vez que el usuario accede a esa pantalla.
+Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez que el usuario accede a **Proveedores Cercanos**. Internet es necesario para toda la app (API + tiles del mapa).
+
+---
+
+## Cambios recientes
+
+### v1.3 — Mapa OSMDroid, editar calificaciones, tema persistido + fixes
+- Mapa de proveedores con **OpenStreetMap** vía OSMDroid — sin API key, sin costo
+- Toggle Lista/Mapa en la pantalla de proveedores cercanos
+- El cliente puede **editar** y **eliminar** sus propias calificaciones
+- El tema claro/oscuro ahora **persiste** entre sesiones con DataStore
+- **Fix**: `CatalogoViewModel` llamaba al endpoint de solicitudes por error al inicializar
+- **Fix**: Navegar al Catálogo desde la bottom bar podía crashear al intentar parsear `{categoriaId}` como entero
+- **Fix**: El ícono "Guardar" del AppBar en Perfil cerraba el modo edición sin guardar
+
+### v1.2 — Buscador, filtro por categoría, detalle de solicitud
+- Barra de búsqueda en Home navega al catálogo con el término
+- Clic en categoría filtra el catálogo automáticamente
+- Pantalla de detalle de solicitud con acciones por estado y rol
+- Cliente puede cancelar solicitudes pendientes con confirmación
+
+### v1.1 — Navegación por rol y CRUD de servicios
+- Bottom bar adaptable: cliente ve Catálogo/Solicitudes, proveedor ve Servicios/Pedidos
+- Pantallas completas de gestión de servicios (crear, editar, eliminar)
+- Selector de categoría con dropdown en el formulario de servicio
+
+### v1.0 — Autenticación completa
+- Login y registro con JWT persistido en DataStore
+- `SessionViewModel` compartido en toda la app
+- Pantalla de perfil con edición y cierre de sesión
