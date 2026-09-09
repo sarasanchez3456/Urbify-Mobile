@@ -1,0 +1,70 @@
+package com.example.appcrud.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.RetrofitClient
+import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.session.TokenManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+data class SessionState(
+    val usuario: Usuario? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val updateSuccess: Boolean = false
+)
+
+class SessionViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val api = RetrofitClient.apiService
+
+    private val _state = MutableStateFlow(SessionState())
+    val state: StateFlow<SessionState> = _state.asStateFlow()
+
+    val usuario: Usuario? get() = _state.value.usuario
+    val rol: String? get() = _state.value.usuario?.rol
+    val idUsuario: Int? get() = _state.value.usuario?.idUsuario
+
+    fun setSession(usuario: Usuario) {
+        _state.value = SessionState(usuario = usuario)
+    }
+
+    fun cargarPerfil() {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            try {
+                val perfil = api.getPerfil()
+                _state.value = SessionState(usuario = perfil)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = e.message)
+            }
+        }
+    }
+
+    fun actualizarPerfil(actualizado: Usuario) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null, updateSuccess = false)
+            try {
+                val resultado = api.updatePerfil(actualizado)
+                _state.value = SessionState(usuario = resultado, updateSuccess = true)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = e.message)
+            }
+        }
+    }
+
+    fun clearUpdateSuccess() {
+        _state.value = _state.value.copy(updateSuccess = false)
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            TokenManager.clearToken(getApplication())
+            _state.value = SessionState()
+        }
+    }
+}

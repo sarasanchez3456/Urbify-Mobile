@@ -3,7 +3,9 @@ package com.example.appcrud.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.model.AuthResponse
 import com.example.appcrud.data.model.RegistroRequest
+import com.example.appcrud.data.model.Usuario
 import com.example.appcrud.data.repository.AuthRepository
 import com.example.appcrud.data.session.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,8 @@ data class AuthUiState(
     val error: String? = null,
     val bloqueado: Boolean = false,
     val minutosRestantes: Int = 0,
-    val success: Boolean = false
+    val success: Boolean = false,
+    val usuarioLogueado: Usuario? = null
 )
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
@@ -28,24 +31,24 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     fun login(correo: String, contrasena: String) {
-        ejecutar { repository.login(correo, contrasena).token }
+        ejecutar { repository.login(correo, contrasena) }
     }
 
     fun registro(request: RegistroRequest) {
-        ejecutar { repository.registro(request).token }
+        ejecutar { repository.registro(request) }
     }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null, bloqueado = false, minutosRestantes = 0)
     }
 
-    private fun ejecutar(bloque: suspend () -> String) {
+    private fun ejecutar(bloque: suspend () -> AuthResponse) {
         viewModelScope.launch {
             _uiState.value = AuthUiState(isLoading = true)
             try {
-                val token = bloque()
-                TokenManager.saveToken(getApplication(), token)
-                _uiState.value = AuthUiState(success = true)
+                val response = bloque()
+                TokenManager.saveToken(getApplication(), response.token)
+                _uiState.value = AuthUiState(success = true, usuarioLogueado = response.usuario)
             } catch (e: HttpException) {
                 val err = AuthRepository.parseError(e)
                 _uiState.value = AuthUiState(

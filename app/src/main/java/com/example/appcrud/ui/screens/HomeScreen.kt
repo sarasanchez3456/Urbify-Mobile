@@ -32,10 +32,12 @@ import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.ui.theme.*
 import com.example.appcrud.ui.viewmodel.HomeViewModel
+import com.example.appcrud.ui.viewmodel.SessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    sessionViewModel: SessionViewModel,
     onCatalogo: () -> Unit = {},
     onProveedoresCercanos: () -> Unit = {},
     onStats: () -> Unit = {},
@@ -49,6 +51,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val sessionState by sessionViewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.cargarDatos()
@@ -78,12 +81,12 @@ fun HomeScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Bienvenida de vuelta",
+                            text = "Bienvenid${if (sessionState.usuario?.rol == "proveedor") "o" else "a"} de vuelta",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.White.copy(alpha = 0.8f)
                         )
                         Text(
-                            text = uiState.usuario?.let { "${it.nombre} ${it.apellido}" } ?: "Usuario",
+                            text = sessionState.usuario?.let { "${it.nombre} ${it.apellido}" } ?: "Usuario",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -107,7 +110,7 @@ fun HomeScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = uiState.usuario?.nombre?.firstOrNull()?.uppercase() ?: "U",
+                                text = sessionState.usuario?.nombre?.firstOrNull()?.uppercase() ?: "U",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White

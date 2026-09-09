@@ -44,19 +44,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Rol
+import com.example.appcrud.data.model.Usuario
 import com.example.appcrud.ui.theme.UrbifyPrimaryGradient
 import com.example.appcrud.ui.viewmodel.AuthViewModel
 
 @Composable
 fun AuthScreen(
-    onAuthSuccess: () -> Unit,
+    onAuthSuccess: (Usuario) -> Unit,
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var tab by remember { mutableIntStateOf(0) } // 0 = login, 1 = registro
 
     LaunchedEffect(uiState.success) {
-        if (uiState.success) onAuthSuccess()
+        if (uiState.success) uiState.usuarioLogueado?.let { onAuthSuccess(it) }
     }
 
     Column(

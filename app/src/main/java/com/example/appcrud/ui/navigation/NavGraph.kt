@@ -1,13 +1,11 @@
 package com.example.appcrud.ui.navigation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -15,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.appcrud.ui.screens.*
+import com.example.appcrud.ui.viewmodel.SessionViewModel
 
 object Routes {
     const val LOGIN = "login"
@@ -52,6 +51,9 @@ fun AppNavGraph(
     onToggleDarkTheme: () -> Unit = {},
     isDarkTheme: Boolean = false
 ) {
+    // Scoped to the Activity — shared across all destinations
+    val sessionViewModel: SessionViewModel = viewModel()
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -80,7 +82,8 @@ fun AppNavGraph(
         ) {
             composable(Routes.LOGIN) {
                 AuthScreen(
-                    onAuthSuccess = {
+                    onAuthSuccess = { usuario ->
+                        sessionViewModel.setSession(usuario)
                         navController.navigate(Routes.HOME) {
                             popUpTo(Routes.LOGIN) { inclusive = true }
                         }
@@ -90,6 +93,7 @@ fun AppNavGraph(
 
             composable(Routes.HOME) {
                 HomeScreen(
+                    sessionViewModel = sessionViewModel,
                     onCatalogo = {
                         navController.navigate(Routes.CATALOGO) {
                             popUpTo(Routes.HOME) { saveState = true }
@@ -224,39 +228,15 @@ fun AppNavGraph(
 
             composable(Routes.PERFIL) {
                 PerfilScreen(
-                    onBack = { navController.popBackStack() }
+                    sessionViewModel = sessionViewModel,
+                    onBack = { navController.popBackStack() },
+                    onLogout = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PerfilScreen(onBack: () -> Unit) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Perfil") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Perfil (próximamente)",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
