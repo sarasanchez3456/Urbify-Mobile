@@ -8,7 +8,7 @@ class ServicioRepository {
 
     suspend fun getMisServicios(): List<Servicio> = api.getMisServicios()
     suspend fun getServicio(id: Int): Servicio = api.getServicio(id)
-    suspend fun createServicio(servicio: Servicio): Servicio = api.createServicio(servicio)
-    suspend fun updateServicio(id: Int, servicio: Servicio): Servicio = api.updateServicio(id, servicio)
+    suspend fun createServicio(servicio: Servicio) { api.createServicio(servicio) }
+    suspend fun updateServicio(id: Int, servicio: Servicio) { api.updateServicio(id, servicio) }
     suspend fun deleteServicio(id: Int) = api.deleteServicio(id)
 }

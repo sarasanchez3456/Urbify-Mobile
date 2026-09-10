@@ -8,8 +8,8 @@ class SolicitudRepository {
 
     private val api = RetrofitClient.apiService
 
-    suspend fun createSolicitud(solicitud: Solicitud): Solicitud {
-        return api.createSolicitud(solicitud)
+    suspend fun createSolicitud(solicitud: Solicitud) {
+        api.createSolicitud(solicitud)
     }
 
     suspend fun getSolicitudesCliente(): List<Solicitud> {
@@ -20,8 +20,8 @@ class SolicitudRepository {
         return api.getSolicitudesProveedor()
     }
 
-    suspend fun cambiarEstado(id: Int, estado: String): Solicitud {
-        return api.cambiarEstadoSolicitud(id, EstadoUpdateRequest(estado))
+    suspend fun cambiarEstado(id: Int, estado: String) {
+        api.cambiarEstadoSolicitud(id, EstadoUpdateRequest(estado))
     }
 
     suspend fun deleteSolicitud(id: Int) {

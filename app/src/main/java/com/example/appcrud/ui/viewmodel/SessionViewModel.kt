@@ -49,8 +49,9 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null, updateSuccess = false)
             try {
-                val resultado = api.updatePerfil(actualizado)
-                _state.value = SessionState(usuario = resultado, updateSuccess = true)
+                // El backend solo devuelve { mensaje }; conservamos el objeto enviado.
+                api.updatePerfil(actualizado)
+                _state.value = SessionState(usuario = actualizado, updateSuccess = true)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.message)
             }

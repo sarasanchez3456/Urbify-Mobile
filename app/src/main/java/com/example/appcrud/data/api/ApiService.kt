@@ -2,9 +2,11 @@ package com.example.appcrud.data.api
 
 import com.example.appcrud.data.model.AuthResponse
 import com.example.appcrud.data.model.Calificacion
+import com.example.appcrud.data.model.CalificacionesProveedorResponse
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.LoginRequest
+import com.example.appcrud.data.model.MensajeResponse
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Servicio
@@ -25,19 +27,19 @@ interface ApiService {
     @GET("auth/perfil")
     suspend fun getPerfil(): Usuario
 
-
+    // El backend responde { "mensaje": "..." }, no el usuario actualizado.
     @PUT("auth/perfil")
-    suspend fun updatePerfil(@Body usuario: Usuario): Usuario
+    suspend fun updatePerfil(@Body usuario: Usuario): MensajeResponse
 
     // Categorías
     @GET("categorias")
     suspend fun getCategorias(): List<Categoria>
 
     @POST("categorias")
-    suspend fun createCategoria(@Body categoria: Categoria): Categoria
+    suspend fun createCategoria(@Body categoria: Categoria): MensajeResponse
 
     @PUT("categorias/{id}")
-    suspend fun updateCategoria(@Path("id") id: Int, @Body categoria: Categoria): Categoria
+    suspend fun updateCategoria(@Path("id") id: Int, @Body categoria: Categoria): MensajeResponse
 
     @DELETE("categorias/{id}")
     suspend fun deleteCategoria(@Path("id") id: Int)
@@ -59,17 +61,17 @@ interface ApiService {
     suspend fun getServicio(@Path("id") id: Int): Servicio
 
     @POST("servicios")
-    suspend fun createServicio(@Body servicio: Servicio): Servicio
+    suspend fun createServicio(@Body servicio: Servicio): MensajeResponse
 
     @PUT("servicios/{id}")
-    suspend fun updateServicio(@Path("id") id: Int, @Body servicio: Servicio): Servicio
+    suspend fun updateServicio(@Path("id") id: Int, @Body servicio: Servicio): MensajeResponse
 
     @DELETE("servicios/{id}")
     suspend fun deleteServicio(@Path("id") id: Int)
 
     // Solicitudes
     @POST("solicitudes")
-    suspend fun createSolicitud(@Body solicitud: Solicitud): Solicitud
+    suspend fun createSolicitud(@Body solicitud: Solicitud): MensajeResponse
 
     @GET("solicitudes/cliente")
     suspend fun getSolicitudesCliente(): List<Solicitud>
@@ -81,20 +83,21 @@ interface ApiService {
     suspend fun cambiarEstadoSolicitud(
         @Path("id") id: Int,
         @Body estado: EstadoUpdateRequest
-    ): Solicitud
+    ): MensajeResponse
 
     @DELETE("solicitudes/{id}")
     suspend fun deleteSolicitud(@Path("id") id: Int)
 
     // Calificaciones
     @POST("calificaciones")
-    suspend fun createCalificacion(@Body calificacion: Calificacion): Calificacion
+    suspend fun createCalificacion(@Body calificacion: Calificacion): MensajeResponse
 
+    // El backend devuelve { calificaciones: [...], promedio, total }, no una lista.
     @GET("calificaciones/proveedor/{proveedorId}")
-    suspend fun getCalificacionesProveedor(@Path("proveedorId") proveedorId: Int): List<Calificacion>
+    suspend fun getCalificacionesProveedor(@Path("proveedorId") proveedorId: Int): CalificacionesProveedorResponse
 
     @PUT("calificaciones/{id}")
-    suspend fun updateCalificacion(@Path("id") id: Int, @Body calificacion: Calificacion): Calificacion
+    suspend fun updateCalificacion(@Path("id") id: Int, @Body calificacion: Calificacion): MensajeResponse
 
     @DELETE("calificaciones/{id}")
     suspend fun deleteCalificacion(@Path("id") id: Int)

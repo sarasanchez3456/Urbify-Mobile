@@ -73,9 +73,13 @@ class CalificacionViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val updated = repository.updateCalificacion(id, calificacion)
+                // El backend responde { mensaje }; aplicamos el cambio localmente
+                // sobre la fila existente para conservar nombre/fecha del listado.
+                repository.updateCalificacion(id, calificacion)
                 val lista = _uiState.value.calificaciones.map {
-                    if (it.idCalificacion == id) updated else it
+                    if (it.idCalificacion == id)
+                        it.copy(puntuacion = calificacion.puntuacion, comentario = calificacion.comentario)
+                    else it
                 }
                 _uiState.value = _uiState.value.copy(
                     calificaciones = lista,

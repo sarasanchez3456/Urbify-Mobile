@@ -2,18 +2,27 @@ package com.example.appcrud.data.model
 
 import com.google.gson.annotations.SerializedName
 
+/**
+ * Alineado con el backend:
+ *   listado -> id, cliente_id, proveedor_id, servicio_id, descripcion, direccion,
+ *              fecha_solicitud, estado, servicio_titulo,
+ *              cliente_nombre / proveedor_nombre (según el endpoint).
+ *   crear (@Body) -> el backend lee proveedor_id, servicio_id, descripcion, direccion.
+ * Antes usaba id_solicitud/id_servicio/mensaje/titulo_servicio/... -> llegaban null.
+ */
 data class Solicitud(
-    @SerializedName("id_solicitud") val idSolicitud: Int? = null,
-    @SerializedName("id_servicio") val idServicio: Int,
-    @SerializedName("id_cliente") val idCliente: Int? = null,
-    @SerializedName("id_proveedor") val idProveedor: Int? = null,
+    @SerializedName("id") val idSolicitud: Int? = null,
+    @SerializedName("servicio_id") val idServicio: Int? = null,
+    @SerializedName("cliente_id") val idCliente: Int? = null,
+    @SerializedName("proveedor_id") val idProveedor: Int? = null,
     @SerializedName("estado") val estado: String? = null,
-    @SerializedName("mensaje") val mensaje: String? = null,
+    // La API llama a este campo "descripcion" tanto al leer como al crear.
+    @SerializedName("descripcion") val mensaje: String? = null,
     @SerializedName("direccion") val direccion: String? = null,
     @SerializedName("fecha_solicitud") val fechaSolicitud: String? = null,
-    @SerializedName("titulo_servicio") val tituloServicio: String? = null,
-    @SerializedName("nombre_cliente") val nombreCliente: String? = null,
-    @SerializedName("nombre_proveedor") val nombreProveedor: String? = null
+    @SerializedName("servicio_titulo") val tituloServicio: String? = null,
+    @SerializedName("cliente_nombre") val nombreCliente: String? = null,
+    @SerializedName("proveedor_nombre") val nombreProveedor: String? = null
 )
 
 object EstadoSolicitud {

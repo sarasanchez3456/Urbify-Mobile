@@ -7,16 +7,16 @@ class CalificacionRepository {
 
     private val api = RetrofitClient.apiService
 
-    suspend fun createCalificacion(calificacion: Calificacion): Calificacion {
-        return api.createCalificacion(calificacion)
+    suspend fun createCalificacion(calificacion: Calificacion) {
+        api.createCalificacion(calificacion)
     }
 
     suspend fun getCalificacionesProveedor(proveedorId: Int): List<Calificacion> {
-        return api.getCalificacionesProveedor(proveedorId)
+        return api.getCalificacionesProveedor(proveedorId).calificaciones
     }
 
-    suspend fun updateCalificacion(id: Int, calificacion: Calificacion): Calificacion {
-        return api.updateCalificacion(id, calificacion)
+    suspend fun updateCalificacion(id: Int, calificacion: Calificacion) {
+        api.updateCalificacion(id, calificacion)
     }
 
     suspend fun deleteCalificacion(id: Int) {

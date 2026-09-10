@@ -3,12 +3,14 @@ package com.example.appcrud.data.model
 import com.google.gson.annotations.SerializedName
 
 data class Usuario(
-    @SerializedName("id_usuario") val idUsuario: Int? = null,
-    @SerializedName("nombre") val nombre: String,
-    @SerializedName("apellido") val apellido: String,
-    @SerializedName("correo") val correo: String,
+    // El backend devuelve la clave "id" (antes se esperaba "id_usuario" -> siempre null).
+    @SerializedName("id") val idUsuario: Int? = null,
+    @SerializedName("nombre") val nombre: String = "",
+    @SerializedName("apellido") val apellido: String = "",
+    @SerializedName("correo") val correo: String = "",
     @SerializedName("telefono") val telefono: String? = null,
-    @SerializedName("rol") val rol: String,
+    @SerializedName("rol") val rol: String = "",
+    @SerializedName("foto_url") val fotoUrl: String? = null,
     @SerializedName("direccion") val direccion: String? = null,
     @SerializedName("latitud") val latitud: Double? = null,
     @SerializedName("longitud") val longitud: Double? = null,

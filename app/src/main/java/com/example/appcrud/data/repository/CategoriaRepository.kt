@@ -1,6 +1,7 @@
 package com.example.appcrud.data.repository
 
 import com.example.appcrud.data.api.RetrofitClient
+import com.example.appcrud.data.model.Categoria
 
 class CategoriaRepository {
 
@@ -8,11 +9,9 @@ class CategoriaRepository {
 
     suspend fun getCategorias() = api.getCategorias()
 
-    suspend fun createCategoria(categoria: com.example.appcrud.data.model.Categoria) =
-        api.createCategoria(categoria)
+    suspend fun createCategoria(categoria: Categoria) { api.createCategoria(categoria) }
 
-    suspend fun updateCategoria(id: Int, categoria: com.example.appcrud.data.model.Categoria) =
-        api.updateCategoria(id, categoria)
+    suspend fun updateCategoria(id: Int, categoria: Categoria) { api.updateCategoria(id, categoria) }
 
     suspend fun deleteCategoria(id: Int) = api.deleteCategoria(id)
 }
