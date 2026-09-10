@@ -64,12 +64,31 @@ No hay que instalar nada manualmente. Gradle descarga todo al sincronizar:
 
 La app necesita el servidor Urbify corriendo. Sin backend no carga ninguna pantalla.
 
+### El backend está en OTRO repositorio
+
+> **https://github.com/sarasanchez3456/Urbify** — Backend Node.js + Frontend web + Docker
+
+`Urbify` (web) y `Urbify-Mobile` son **repositorios Git separados** pero **dependen entre sí**: esta app consume esa misma API REST. Si trabajas aquí, clona y mantén actualizados **los dos**.
+
 ```bash
-# En el directorio del backend
+# Opción A (recomendada): todo con Docker desde el repo Urbify
+git clone https://github.com/sarasanchez3456/Urbify.git
+cd Urbify
+docker compose up -d          # levanta db + backend (4000) + frontend
+
+# Opción B: solo el backend a mano
+cd Urbify/backend
 npm install
-npm start
-# Debe quedar escuchando en el puerto 4000
+npm start                     # debe quedar escuchando en el puerto 4000
 ```
+
+### Compatibilidad de versiones
+
+Los nombres de campo del JSON (`id`, `categoria_id`, `tarifa`, …) deben coincidir entre esta app y el backend. **Usa siempre la versión más reciente de ambos repos**: una app vieja contra un backend nuevo (o al revés) muestra campos vacíos o falla al crear servicios/solicitudes.
+
+### Base de datos al clonar en limpio
+
+Al levantar el backend por primera vez la base de datos queda **vacía**: el `schema.sql` solo siembra las **8 categorías**, sin usuarios ni servicios. Cada quien registra sus propios datos. Lo que tengas localmente vive en el volumen Docker `urbify_mysql_data` del backend, **nunca en el repositorio** — no se comparte al clonar.
 
 ### URL base configurada
 
@@ -160,7 +179,7 @@ app/src/main/java/com/example/appcrud/
 ├── data/
 │   ├── api/
 │   │   ├── ApiService.kt               # Todos los endpoints Retrofit
-│   │   └── RetrofitClient.kt           # OkHttp + interceptores (auth, charset)
+│   │   └── RetrofitClient.kt           # OkHttp + interceptores (auth, logging)
 │   ├── location/
 │   │   └── LocationProvider.kt         # GPS con FusedLocationProviderClient
 │   ├── model/                          # Data classes de la API
@@ -329,6 +348,14 @@ Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez q
 ---
 
 ## Cambios recientes
+
+### v1.4 — Alineación del contrato con la API + limpieza
+- **Fix**: los `@SerializedName` de los modelos no coincidían con el JSON del backend, así que servicios, solicitudes y calificaciones llegaban con campos `null` (y provocaban NPE). Renombrados a `id`, `categoria_id`, `tarifa`, `descripcion`, `servicio_titulo`, etc.
+- **Fix**: los `@Body` de crear/editar enviaban claves que el backend ignoraba → ahora se crean servicios y solicitudes correctamente
+- **Fix**: los endpoints de escritura devuelven `{ mensaje }`, no el recurso plano — se tipan con `MensajeResponse` en vez de deserializar un objeto vacío
+- **Fix**: `getCalificacionesProveedor` esperaba una lista pero la API responde `{ calificaciones, promedio, total }`
+- **Removido**: el `charsetInterceptor` de `RetrofitClient` que re-decodificaba el body como ISO-8859-1 (corrompía emojis/`€`/`–` y cualquier texto con "Ã"); el backend ya sirve UTF-8 correcto
+- Requiere el backend en su versión más reciente (repo `Urbify`)
 
 ### v1.3 — Mapa OSMDroid, editar calificaciones, tema persistido + fixes
 - Mapa de proveedores con **OpenStreetMap** vía OSMDroid — sin API key, sin costo
