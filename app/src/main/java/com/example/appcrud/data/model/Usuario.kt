@@ -14,7 +14,9 @@ data class Usuario(
     @SerializedName("direccion") val direccion: String? = null,
     @SerializedName("latitud") val latitud: Double? = null,
     @SerializedName("longitud") val longitud: Double? = null,
-    @SerializedName("oficio") val oficio: String? = null
+    @SerializedName("oficio") val oficio: String? = null,
+    // Proveedor: acepta trabajos y aparece en las búsquedas de clientes.
+    @SerializedName("disponible") val disponible: Boolean? = null,
 )
 
 object Rol {

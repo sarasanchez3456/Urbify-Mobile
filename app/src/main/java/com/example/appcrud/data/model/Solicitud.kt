@@ -19,9 +19,14 @@ data class Solicitud(
     // La API llama a este campo "descripcion" tanto al leer como al crear.
     @SerializedName("descripcion") val mensaje: String? = null,
     @SerializedName("direccion") val direccion: String? = null,
+    @SerializedName("latitud") val latitud: Double? = null,
+    @SerializedName("longitud") val longitud: Double? = null,
     @SerializedName("fecha_solicitud") val fechaSolicitud: String? = null,
+    @SerializedName("fecha_servicio") val fechaServicio: String? = null,
     @SerializedName("servicio_titulo") val tituloServicio: String? = null,
+    @SerializedName("tarifa") val tarifa: Double? = null,
     @SerializedName("cliente_nombre") val nombreCliente: String? = null,
+    @SerializedName("cliente_apellido") val apellidoCliente: String? = null,
     @SerializedName("proveedor_nombre") val nombreProveedor: String? = null
 )
 

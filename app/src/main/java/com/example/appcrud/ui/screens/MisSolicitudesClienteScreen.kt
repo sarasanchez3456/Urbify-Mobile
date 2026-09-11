@@ -115,10 +115,10 @@ fun MisSolicitudesClienteScreen(
                                 SolicitudProveedorInlineCard(
                                     solicitud = solicitud,
                                     onClick = { onDetalle(solicitud, true) },
-                                    onAceptar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.ACEPTADA) },
-                                    onRechazar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.RECHAZADA) },
-                                    onIniciar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.EN_PROCESO) },
-                                    onCompletar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.COMPLETADA) }
+                                    onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
+                                    onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
+                                    onIniciar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
+                                    onCompletar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA) } }
                                 )
                             } else {
                                 SolicitudClienteCard(
@@ -243,7 +243,7 @@ private fun SolicitudClienteCard(
             if (solicitud.estado == EstadoSolicitud.PENDIENTE) {
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
-                    onClick = { onCancelar(solicitud.idSolicitud!!) },
+                    onClick = { solicitud.idSolicitud?.let { onCancelar(it) } },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error

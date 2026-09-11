@@ -28,19 +28,21 @@ fun MisSolicitudesProveedorScreen(
     viewModel: SolicitudViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.loadSolicitudesProveedor()
     }
 
-    LaunchedEffect(uiState.successMessage) {
-        if (uiState.successMessage != null) {
-            viewModel.loadSolicitudesProveedor()
+    LaunchedEffect(uiState.successMessage, uiState.error) {
+        (uiState.error?.let { "Error: $it" } ?: uiState.successMessage)?.let {
+            snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Solicitudes Recibidas") },
@@ -63,7 +65,7 @@ fun MisSolicitudesProveedorScreen(
                     CircularProgressIndicator()
                 }
             }
-            uiState.error != null -> {
+            uiState.error != null && uiState.solicitudes.isEmpty() -> {
                 EmptyState(
                     icon = Icons.Default.Inbox,
                     title = "Algo salió mal",
@@ -90,13 +92,16 @@ fun MisSolicitudesProveedorScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(uiState.solicitudes) { solicitud ->
+                        val ocupado = (solicitud.idSolicitud ?: -1) in uiState.procesando
                         SolicitudProveedorCard(
                             solicitud = solicitud,
+                            procesando = ocupado,
                             onClick = { onDetalle(solicitud) },
-                            onAceptar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.ACEPTADA) },
-                            onRechazar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.RECHAZADA) },
-                            onIniciar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.EN_PROCESO) },
-                            onCompletar = { viewModel.cambiarEstado(solicitud.idSolicitud!!, EstadoSolicitud.COMPLETADA) }
+                            onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
+                            // El backend no tiene "rechazada": rechazar un pendiente = cancelar.
+                            onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
+                            onIniciar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
+                            onCompletar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA) } }
                         )
                     }
                 }
@@ -108,6 +113,7 @@ fun MisSolicitudesProveedorScreen(
 @Composable
 private fun SolicitudProveedorCard(
     solicitud: Solicitud,
+    procesando: Boolean = false,
     onClick: () -> Unit,
     onAceptar: () -> Unit,
     onRechazar: () -> Unit,
@@ -199,6 +205,7 @@ private fun SolicitudProveedorCard(
                     ) {
                         OutlinedButton(
                             onClick = onRechazar,
+                            enabled = !procesando,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
@@ -210,28 +217,37 @@ private fun SolicitudProveedorCard(
                         }
                         Button(
                             onClick = onAceptar,
+                            enabled = !procesando,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Aceptar")
+                            if (procesando) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Aceptar")
+                            }
                         }
                     }
                 }
                 EstadoSolicitud.ACEPTADA -> {
                     Button(
                         onClick = onIniciar,
+                        enabled = !procesando,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Iniciar trabajo")
+                        if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        else Text("Iniciar trabajo")
                     }
                 }
                 EstadoSolicitud.EN_PROCESO -> {
                     Button(
                         onClick = onCompletar,
+                        enabled = !procesando,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Marcar como completado")
+                        if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        else Text("Marcar como completado")
                     }
                 }
             }

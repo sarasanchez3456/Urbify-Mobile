@@ -2,35 +2,38 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Servicio
-import com.example.appcrud.data.model.Stats
+import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.repository.CategoriaRepository
+import com.example.appcrud.data.repository.ServicioRepository
 import com.example.appcrud.data.repository.SolicitudRepository
-import com.example.appcrud.data.repository.StatsRepository
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * Estado de la Home del cliente.
+ *
+ * [serviciosDestacados] y [solicitudesActivas] se cargan desde endpoints que YA
+ * existían en el backend (GET /servicios/destacados y GET /solicitudes/cliente)
+ * pero que la Home todavía no consumía.
+ */
 data class HomeUiState(
-    val stats: Stats? = null,
     val categorias: List<Categoria> = emptyList(),
-    val destacados: List<Servicio> = emptyList(),
-    val solicitudesActivas: Int = 0,
-    val solicitudesCompletadas: Int = 0,
+    val serviciosDestacados: List<Servicio> = emptyList(),
+    val solicitudesActivas: List<Solicitud> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
 )
 
 class HomeViewModel : ViewModel() {
 
-    private val api = RetrofitClient.apiService
     private val categoriaRepository = CategoriaRepository()
-    private val statsRepository = StatsRepository()
+    private val servicioRepository = ServicioRepository()
     private val solicitudRepository = SolicitudRepository()
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -38,45 +41,33 @@ class HomeViewModel : ViewModel() {
 
     fun cargarDatos() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val statsDeferred = async { statsRepository.getStats() }
-                val categoriasDeferred = async { categoriaRepository.getCategorias() }
-                val destacadosDeferred = async { try { api.getServiciosDestacados() } catch (_: Exception) { emptyList() } }
-                val solicitudesClienteDeferred = async { try { solicitudRepository.getSolicitudesCliente() } catch (_: Exception) { emptyList() } }
-                val solicitudesProveedorDeferred = async { try { solicitudRepository.getSolicitudesProveedor() } catch (_: Exception) { emptyList() } }
+                val categorias = categoriaRepository.getCategorias()
+                val destacados = runCatching { servicioRepository.getServiciosDestacados() }
+                    .getOrDefault(emptyList())
+                val solicitudes = runCatching { solicitudRepository.getSolicitudesCliente() }
+                    .getOrDefault(emptyList())
 
-                val stats = statsDeferred.await()
-                val categorias = categoriasDeferred.await()
-                val destacados = destacadosDeferred.await()
-                val solicitudesCliente = solicitudesClienteDeferred.await()
-                val solicitudesProveedor = solicitudesProveedorDeferred.await()
-
-                val activas = solicitudesCliente.count {
-                    it.estado == EstadoSolicitud.PENDIENTE ||
-                    it.estado == EstadoSolicitud.ACEPTADA ||
-                    it.estado == EstadoSolicitud.EN_PROCESO
-                } + solicitudesProveedor.count {
-                    it.estado == EstadoSolicitud.PENDIENTE ||
-                    it.estado == EstadoSolicitud.ACEPTADA ||
-                    it.estado == EstadoSolicitud.EN_PROCESO
+                _uiState.update {
+                    it.copy(
+                        categorias = categorias,
+                        serviciosDestacados = destacados,
+                        solicitudesActivas = solicitudes.filter { s ->
+                            s.estado == EstadoSolicitud.PENDIENTE ||
+                                    s.estado == EstadoSolicitud.ACEPTADA ||
+                                    s.estado == EstadoSolicitud.EN_PROCESO
+                        },
+                        isLoading = false,
+                    )
                 }
-                val completadas = solicitudesCliente.count { it.estado == EstadoSolicitud.COMPLETADA } +
-                    solicitudesProveedor.count { it.estado == EstadoSolicitud.COMPLETADA }
-
-                _uiState.value = HomeUiState(
-                    stats = stats,
-                    categorias = categorias,
-                    destacados = destacados,
-                    solicitudesActivas = activas,
-                    solicitudesCompletadas = completadas,
-                    isLoading = false
-                )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al cargar datos"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al cargar la información",
+                    )
+                }
             }
         }
     }

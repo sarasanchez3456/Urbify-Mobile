@@ -11,6 +11,7 @@ import com.example.appcrud.data.session.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
@@ -44,20 +45,23 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun ejecutar(bloque: suspend () -> AuthResponse) {
         viewModelScope.launch {
-            _uiState.value = AuthUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true, error = null, bloqueado = false) }
             try {
                 val response = bloque()
                 TokenManager.saveToken(getApplication(), response.token)
-                _uiState.value = AuthUiState(success = true, usuarioLogueado = response.usuario)
+                _uiState.update { it.copy(isLoading = false, success = true, usuarioLogueado = response.usuario) }
             } catch (e: HttpException) {
                 val err = AuthRepository.parseError(e)
-                _uiState.value = AuthUiState(
-                    error = err.error ?: "Error al autenticar",
-                    bloqueado = err.bloqueado,
-                    minutosRestantes = err.minutosRestantes
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = err.error ?: "Error al autenticar",
+                        bloqueado = err.bloqueado,
+                        minutosRestantes = err.minutosRestantes
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.value = AuthUiState(error = e.message ?: "Error de conexión")
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error de conexión") }
             }
         }
     }

@@ -25,8 +25,9 @@ import com.example.appcrud.data.location.LocationProvider
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.viewmodel.ProveedoresCercanosViewModel
+import com.example.appcrud.ui.viewmodel.SessionViewModel
 import kotlinx.coroutines.launch
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import com.example.appcrud.data.location.MapTiles
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -36,9 +37,15 @@ import kotlin.math.roundToInt
 @Composable
 fun ProveedoresCercanosScreen(
     onBack: () -> Unit,
+    sessionViewModel: SessionViewModel,
+    onElegirDireccion: () -> Unit = {},
     viewModel: ProveedoresCercanosViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val sessionState by sessionViewModel.state.collectAsState()
+    val perfilLat = sessionState.usuario?.latitud
+    val perfilLng = sessionState.usuario?.longitud
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationProvider = remember { LocationProvider(context) }
@@ -50,10 +57,14 @@ fun ProveedoresCercanosScreen(
 
     var permissionGranted by remember { mutableStateOf(hasLocationPermission()) }
 
-    fun fetchUbicacionYCargar() {
+    // Ubicación: 1º GPS (si hay permiso y hay señal), 2º la dirección del perfil.
+    fun cargarConMejorUbicacion() {
         scope.launch {
-            val location = locationProvider.getCurrentLocation()
-            if (location != null) viewModel.cargar(location.latitude, location.longitude)
+            val gps = if (permissionGranted) locationProvider.getCurrentLocation() else null
+            when {
+                gps != null -> viewModel.cargar(gps.latitude, gps.longitude)
+                perfilLat != null && perfilLng != null -> viewModel.cargar(perfilLat, perfilLng)
+            }
         }
     }
 
@@ -61,12 +72,14 @@ fun ProveedoresCercanosScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         permissionGranted = result.values.any { it }
-        if (permissionGranted) fetchUbicacionYCargar()
+        cargarConMejorUbicacion()
     }
 
-    LaunchedEffect(Unit) {
-        if (permissionGranted && uiState.lat == null) fetchUbicacionYCargar()
+    LaunchedEffect(permissionGranted, perfilLat, perfilLng) {
+        if (uiState.lat == null) cargarConMejorUbicacion()
     }
+
+    val sinUbicacion = uiState.lat == null && !uiState.isLoading
 
     Scaffold(
         topBar = {
@@ -108,20 +121,31 @@ fun ProveedoresCercanosScreen(
             }
 
             when {
-                !permissionGranted -> EmptyState(
-                    icon = Icons.Default.LocationOff,
-                    title = "Necesitamos tu ubicación",
-                    subtitle = "Para mostrarte proveedores cercanos, activa los permisos de ubicación",
-                    actionLabel = "Permitir ubicación",
-                    onAction = {
+                sinUbicacion -> Column(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(Icons.Default.LocationOff, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(12.dp))
+                    Text("Necesitamos saber dónde estás", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Usa tu GPS o elige tu dirección para ver proveedores cerca.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = {
                         permissionLauncher.launch(
                             arrayOf(
                                 Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
                             )
                         )
-                    }
-                )
+                    }) { Text("Usar mi GPS") }
+                    TextButton(onClick = onElegirDireccion) { Text("Elegir mi dirección") }
+                }
 
                 uiState.isLoading -> Box(
                     modifier = Modifier.fillMaxSize(),
@@ -133,19 +157,19 @@ fun ProveedoresCercanosScreen(
                     title = "Algo salió mal",
                     subtitle = uiState.error,
                     actionLabel = "Reintentar",
-                    onAction = { fetchUbicacionYCargar() }
-                )
-
-                uiState.proveedores.isEmpty() -> EmptyState(
-                    icon = Icons.Default.LocationOn,
-                    title = "No hay proveedores",
-                    subtitle = "No se encontraron proveedores en el radio seleccionado"
+                    onAction = { cargarConMejorUbicacion() }
                 )
 
                 mostrarMapa -> MapaProveedores(
                     proveedores = uiState.proveedores,
                     userLat = uiState.lat ?: 0.0,
                     userLng = uiState.lng ?: 0.0
+                )
+
+                uiState.proveedores.isEmpty() -> EmptyState(
+                    icon = Icons.Default.LocationOn,
+                    title = "No hay proveedores",
+                    subtitle = "No se encontraron proveedores en el radio seleccionado. Prueba ampliar el radio."
                 )
 
                 else -> LazyColumn(
@@ -186,7 +210,7 @@ private fun rememberOsmMapView(
 
     val mapView = remember {
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
+            setTileSource(MapTiles.CARTO_VOYAGER)
             setMultiTouchControls(true)
             isTilesScaledToDpi = true
         }

@@ -17,7 +17,8 @@ data class Servicio(
     @SerializedName("descripcion") val descripcion: String? = null,
     @SerializedName("tarifa") val precio: Double? = null,
     @SerializedName("tipo_tarifa") val tipoTarifa: String? = null,
-    @SerializedName("disponible") val disponible: Boolean? = null,
+    // El backend lo devuelve como TINYINT (0/1), no como booleano JSON.
+    @SerializedName("disponible") val disponible: Int? = null,
     @SerializedName("categoria_nombre") val nombreCategoria: String? = null,
     @SerializedName("nombre") val nombreProveedor: String? = null,
     @SerializedName("apellido") val apellidoProveedor: String? = null,

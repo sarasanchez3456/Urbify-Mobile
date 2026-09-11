@@ -7,6 +7,7 @@ import com.example.appcrud.data.repository.CalificacionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class CalificacionUiState(
@@ -25,15 +26,17 @@ class CalificacionViewModel : ViewModel() {
 
     fun loadCalificacionesProveedor(proveedorId: Int) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val calificaciones = repository.getCalificacionesProveedor(proveedorId)
-                _uiState.value = _uiState.value.copy(calificaciones = calificaciones, isLoading = false)
+                _uiState.update { it.copy(calificaciones = calificaciones, isLoading = false) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al cargar calificaciones"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al cargar calificaciones"
+                    )
+                }
             }
         }
     }
@@ -46,7 +49,7 @@ class CalificacionViewModel : ViewModel() {
         onSuccess: () -> Unit
     ) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val calificacion = Calificacion(
                     idSolicitud = idSolicitud,
@@ -55,67 +58,77 @@ class CalificacionViewModel : ViewModel() {
                     comentario = comentario
                 )
                 repository.createCalificacion(calificacion)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    successMessage = "Calificación enviada exitosamente"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Calificación enviada exitosamente"
+                    )
+                }
                 onSuccess()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al enviar calificación"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al enviar calificación"
+                    )
+                }
             }
         }
     }
 
     fun updateCalificacion(id: Int, calificacion: Calificacion) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                // El backend responde { mensaje }; aplicamos el cambio localmente
-                // sobre la fila existente para conservar nombre/fecha del listado.
                 repository.updateCalificacion(id, calificacion)
-                val lista = _uiState.value.calificaciones.map {
-                    if (it.idCalificacion == id)
-                        it.copy(puntuacion = calificacion.puntuacion, comentario = calificacion.comentario)
-                    else it
+                _uiState.update { state ->
+                    val lista = state.calificaciones.map {
+                        if (it.idCalificacion == id)
+                            it.copy(puntuacion = calificacion.puntuacion, comentario = calificacion.comentario)
+                        else it
+                    }
+                    state.copy(
+                        calificaciones = lista,
+                        isLoading = false,
+                        successMessage = "Calificación actualizada"
+                    )
                 }
-                _uiState.value = _uiState.value.copy(
-                    calificaciones = lista,
-                    isLoading = false,
-                    successMessage = "Calificación actualizada"
-                )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al actualizar calificación"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al actualizar calificación"
+                    )
+                }
             }
         }
     }
 
     fun deleteCalificacion(id: Int) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 repository.deleteCalificacion(id)
-                val lista = _uiState.value.calificaciones.filter { it.idCalificacion != id }
-                _uiState.value = _uiState.value.copy(
-                    calificaciones = lista,
-                    isLoading = false,
-                    successMessage = "Calificación eliminada"
-                )
+                _uiState.update { state ->
+                    val lista = state.calificaciones.filter { it.idCalificacion != id }
+                    state.copy(
+                        calificaciones = lista,
+                        isLoading = false,
+                        successMessage = "Calificación eliminada"
+                    )
+                }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al eliminar calificación"
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Error al eliminar calificación"
+                    )
+                }
             }
         }
     }
 
     fun clearMessages() {
-        _uiState.value = _uiState.value.copy(error = null, successMessage = null)
+        _uiState.update { it.copy(error = null, successMessage = null) }
     }
 }

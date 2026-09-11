@@ -61,7 +61,9 @@ fun DetalleSolicitudScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.cambiarEstado(solicitudActual.idSolicitud!!, EstadoSolicitud.CANCELADA)
+                        solicitudActual.idSolicitud?.let {
+                            viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
+                        }
                         confirmarCancelar = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -170,25 +172,41 @@ fun DetalleSolicitudScreen(
                         EstadoSolicitud.PENDIENTE -> {
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedButton(
-                                    onClick = { viewModel.cambiarEstado(solicitudActual.idSolicitud!!, EstadoSolicitud.RECHAZADA) },
+                                    onClick = {
+                                        solicitudActual.idSolicitud?.let {
+                                            viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
+                                        }
+                                    },
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                                 ) { Text("Rechazar") }
                                 Button(
-                                    onClick = { viewModel.cambiarEstado(solicitudActual.idSolicitud!!, EstadoSolicitud.ACEPTADA) },
+                                    onClick = {
+                                        solicitudActual.idSolicitud?.let {
+                                            viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA)
+                                        }
+                                    },
                                     modifier = Modifier.weight(1f)
                                 ) { Text("Aceptar") }
                             }
                         }
                         EstadoSolicitud.ACEPTADA -> {
                             Button(
-                                onClick = { viewModel.cambiarEstado(solicitudActual.idSolicitud!!, EstadoSolicitud.EN_PROCESO) },
+                                onClick = {
+                                    solicitudActual.idSolicitud?.let {
+                                        viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO)
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth()
                             ) { Text("Iniciar trabajo") }
                         }
                         EstadoSolicitud.EN_PROCESO -> {
                             Button(
-                                onClick = { viewModel.cambiarEstado(solicitudActual.idSolicitud!!, EstadoSolicitud.COMPLETADA) },
+                                onClick = {
+                                    solicitudActual.idSolicitud?.let {
+                                        viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA)
+                                    }
+                                },
                                 modifier = Modifier.fillMaxWidth()
                             ) { Text("Marcar como completado") }
                         }

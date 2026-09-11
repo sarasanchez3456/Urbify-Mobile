@@ -58,6 +58,23 @@ class SessionViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    /** Toggle "Disponible para trabajar" del proveedor. Optimista: revierte si falla. */
+    fun setDisponible(valor: Boolean) {
+        val actual = _state.value.usuario ?: return
+        if (actual.disponible == valor) return
+        _state.value = _state.value.copy(usuario = actual.copy(disponible = valor))
+        viewModelScope.launch {
+            try {
+                api.updatePerfil(actual.copy(disponible = valor))
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    usuario = _state.value.usuario?.copy(disponible = actual.disponible),
+                    error = e.message ?: "No se pudo cambiar la disponibilidad",
+                )
+            }
+        }
+    }
+
     fun clearUpdateSuccess() {
         _state.value = _state.value.copy(updateSuccess = false)
     }

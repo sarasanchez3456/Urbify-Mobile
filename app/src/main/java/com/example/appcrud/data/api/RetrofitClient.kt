@@ -10,8 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
     // 10.0.2.2 = "localhost" del host visto desde el emulador de Android.
-    // Cambia la línea de BASE_URL para que apunte a 127.0.0.1
-    private const val BASE_URL = "http://127.0.0.1:4000/api/"
+    private const val BASE_URL = "http://10.0.2.2:4000/api/"
 
     private val gson = GsonBuilder()
         .setLenient()

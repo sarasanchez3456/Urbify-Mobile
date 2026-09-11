@@ -65,9 +65,9 @@ class CreateEditServicioViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, error = null)
             try {
-                if (existente != null) {
+                if (existente?.idServicio != null) {
                     servicioRepository.updateServicio(
-                        existente.idServicio!!,
+                        existente.idServicio,
                         existente.copy(
                             titulo = titulo,
                             descripcion = descripcion,

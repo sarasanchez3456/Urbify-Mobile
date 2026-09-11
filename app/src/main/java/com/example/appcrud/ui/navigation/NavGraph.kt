@@ -3,8 +3,10 @@ package com.example.appcrud.ui.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -13,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.screens.*
 import com.example.appcrud.ui.viewmodel.SessionViewModel
@@ -23,6 +26,8 @@ object Routes {
     const val HOME = "home"
     const val CATALOGO = "catalogo?query={query}&categoriaId={categoriaId}"
     const val PROVEEDORES_CERCANOS = "proveedores_cercanos"
+    const val ELEGIR_DIRECCION = "elegir_direccion"
+    const val BILLETERA = "billetera"
     const val STATS = "stats"
     const val CREATE_SOLICITUD = "create_solicitud/{idServicio}/{tituloServicio}"
     const val MIS_SOLICITUDES_CLIENTE = "mis_solicitudes_cliente"
@@ -61,6 +66,7 @@ private val bottomBarRoutes = setOf(
     Routes.MIS_SOLICITUDES_CLIENTE,
     Routes.MIS_SOLICITUDES_PROVEEDOR,
     Routes.MIS_SERVICIOS,
+    Routes.BILLETERA,
     Routes.PERFIL
 )
 
@@ -86,11 +92,17 @@ fun AppNavGraph(
                     currentRoute = currentRoute,
                     rol = sessionState.usuario?.rol,
                     onNavigate = { route ->
-                        val resolvedRoute = if (route == Routes.CATALOGO) Routes.catalogo() else route
-                        navController.navigate(resolvedRoute) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        if (route == Routes.HOME) {
+                            // "Inicio": vuelve limpio a la home, sin depender de
+                            // restoreState (que podía dejar la pantalla congelada).
+                            navController.popBackStack(Routes.HOME, inclusive = false)
+                        } else {
+                            val resolvedRoute = if (route == Routes.CATALOGO) Routes.catalogo() else route
+                            navController.navigate(resolvedRoute) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 )
@@ -107,51 +119,77 @@ fun AppNavGraph(
                     onAuthSuccess = { usuario ->
                         sessionViewModel.setSession(usuario)
                         navController.navigate(Routes.HOME) {
-                            popUpTo(Routes.LOGIN) { inclusive = true }
+                            // popUpTo(0) limpia TODA la pila y los estados guardados,
+                            // así un re-login (p.ej. con otro rol) no arrastra pantallas
+                            // ni ViewModels de la sesión anterior.
+                            popUpTo(0) { inclusive = true }
                         }
                     }
                 )
             }
 
             composable(Routes.HOME) {
-                HomeScreen(
-                    sessionViewModel = sessionViewModel,
-                    onCatalogo = { navController.navigate(Routes.catalogo()) },
-                    onProveedoresCercanos = { navController.navigate(Routes.PROVEEDORES_CERCANOS) },
-                    onStats = { navController.navigate(Routes.STATS) },
-                    onCreateSolicitud = { idServicio, titulo ->
-                        navController.navigate(Routes.createSolicitud(idServicio, titulo))
-                    },
-                    onMisSolicitudesCliente = {
-                        navController.navigate(Routes.MIS_SOLICITUDES_CLIENTE) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onMisSolicitudesProveedor = {
-                        navController.navigate(Routes.MIS_SOLICITUDES_PROVEEDOR) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    },
-                    onHistorialCalificaciones = { proveedorId, nombre ->
-                        navController.navigate(Routes.historialCalificaciones(proveedorId, nombre))
-                    },
-                    onToggleDarkTheme = onToggleDarkTheme,
-                    isDarkTheme = isDarkTheme,
-                    onBusqueda = { query ->
-                        navController.navigate(Routes.catalogo(query = query)) {
-                            launchSingleTop = true
-                        }
-                    },
-                    onCategoriaClick = { categoria ->
-                        navController.navigate(Routes.catalogo(categoriaId = categoria.idCategoria ?: -1)) {
-                            launchSingleTop = true
+                val abrirCatalogoQuery: (String) -> Unit = { query ->
+                    navController.navigate(Routes.catalogo(query = query)) { launchSingleTop = true }
+                }
+                val abrirCatalogoCategoria: (Int) -> Unit = { catId ->
+                    navController.navigate(Routes.catalogo(categoriaId = catId)) { launchSingleTop = true }
+                }
+
+                val usuarioSesion = sessionState.usuario
+                if (usuarioSesion == null) {
+                    // Sesión perdida (muerte del proceso / recreación del ViewModel).
+                    // Rehidratamos con el token guardado; si no es válido, a LOGIN.
+                    LaunchedEffect(Unit) { sessionViewModel.cargarPerfil() }
+                    LaunchedEffect(sessionState.error) {
+                        if (sessionState.error != null) {
+                            navController.navigate(Routes.LOGIN) { popUpTo(0) { inclusive = true } }
                         }
                     }
-                )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (usuarioSesion.rol == Rol.CLIENTE) {
+                    ClienteHomeScreen(
+                        sessionViewModel = sessionViewModel,
+                        onBuscar = abrirCatalogoQuery,
+                        onCategoriaClick = { categoria -> abrirCatalogoCategoria(categoria.idCategoria ?: -1) },
+                        onVerCatalogo = { navController.navigate(Routes.catalogo()) },
+                        onVerMapa = { navController.navigate(Routes.PROVEEDORES_CERCANOS) },
+                        onElegirDireccion = { navController.navigate(Routes.ELEGIR_DIRECCION) },
+                        onVerMisSolicitudes = {
+                            navController.navigate(Routes.MIS_SOLICITUDES_CLIENTE) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onServicioClick = { servicio ->
+                            val idServicio = servicio.idServicio
+                            if (idServicio != null) {
+                                navController.navigate(Routes.createSolicitud(idServicio, servicio.titulo))
+                            }
+                        },
+                        onSolicitudClick = { solicitud ->
+                            navController.navigate(Routes.detalleSolicitud(solicitud, esProveedor = false))
+                        }
+                    )
+                } else {
+                    ProveedorHomeScreen(
+                        sessionViewModel = sessionViewModel,
+                        onVerTrabajos = {
+                            navController.navigate(Routes.MIS_SOLICITUDES_PROVEEDOR) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onGestionarServicios = { navController.navigate(Routes.MIS_SERVICIOS) },
+                        onSolicitudClick = { solicitud ->
+                            navController.navigate(Routes.detalleSolicitud(solicitud, esProveedor = true))
+                        }
+                    )
+                }
             }
 
             composable(
@@ -176,7 +214,22 @@ fun AppNavGraph(
             }
 
             composable(Routes.PROVEEDORES_CERCANOS) {
-                ProveedoresCercanosScreen(onBack = { navController.popBackStack() })
+                ProveedoresCercanosScreen(
+                    onBack = { navController.popBackStack() },
+                    sessionViewModel = sessionViewModel,
+                    onElegirDireccion = { navController.navigate(Routes.ELEGIR_DIRECCION) },
+                )
+            }
+
+            composable(Routes.ELEGIR_DIRECCION) {
+                ElegirDireccionScreen(
+                    sessionViewModel = sessionViewModel,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.BILLETERA) {
+                BilleteraScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Routes.STATS) {

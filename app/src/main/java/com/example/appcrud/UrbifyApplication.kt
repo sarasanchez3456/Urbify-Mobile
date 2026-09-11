@@ -11,7 +11,9 @@ class UrbifyApplication : Application() {
         TokenManager.init(this)
         ThemeManager.init(this)
         Configuration.getInstance().apply {
-            userAgentValue = packageName
+            // OSM bloquea (403 "tile usage policy") los User-Agent por defecto y los
+            // que empiezan por "com.example". Debe ser una cadena descriptiva y única.
+            userAgentValue = "UrbifyMobile/1.0 (+https://github.com/sarasanchez3456/Urbify-Mobile)"
             osmdroidBasePath = cacheDir
         }
     }
