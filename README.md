@@ -106,6 +106,22 @@ Para saber tu IP local:
 - **Windows**: `ipconfig` en la terminal
 - **Mac/Linux**: `ifconfig | grep inet` o `ip addr`
 
+### ⚠️ ¿Error de conexión / Timeout (10000ms) en el Emulador?
+
+Si el backend está corriendo y funciona en el navegador del PC, pero la app te tira un error como `failed to connect to /10.0.2.2 (port 4000) ... after 10000ms`, se debe a un bloqueo del Firewall de Windows o a la configuración de red IPv6 de Node.js.
+
+**Solución recomendada (Redirección de Puertos ADB):**
+1. Abre la terminal de Android Studio o PowerShell en tu PC.
+2. Redirige el puerto `4000` ejecutando el siguiente comando:
+   ```powershell
+   & "C:\Users\USER\AppData\Local\Android\Sdk\platform-tools\adb.exe" reverse tcp:4000 tcp:4000
+   ```
+3. En la app Android, ve a `RetrofitClient.kt` y cambia la URL base para que use `127.0.0.1` (localhost redirigido):
+   ```kotlin
+   private const val BASE_URL = "http://127.0.0.1:4000/api/"
+   ```
+4. Vuelve a ejecutar la app. Esto se salta las restricciones del Firewall de Windows y conecta de forma directa e instantánea.
+
 ---
 
 ## Ejecutar la app
