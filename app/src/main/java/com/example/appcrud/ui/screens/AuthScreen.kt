@@ -1,5 +1,6 @@
 package com.example.appcrud.ui.screens
 
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,9 @@ import com.example.appcrud.data.model.Usuario
 import com.example.appcrud.ui.theme.UrbifyPrimaryGradient
 import com.example.appcrud.ui.viewmodel.AuthViewModel
 
+private fun esCorreoValido(correo: String): Boolean =
+    Patterns.EMAIL_ADDRESS.matcher(correo).matches()
+
 @Composable
 fun AuthScreen(
     onAuthSuccess: (Usuario) -> Unit,
@@ -94,7 +98,7 @@ fun AuthScreen(
             AuthAlert(
                 titulo = "Cuenta bloqueada temporalmente",
                 detalle = "Intenta de nuevo en ${uiState.minutosRestantes} minuto" +
-                    if (uiState.minutosRestantes != 1) "s" else ""
+                        if (uiState.minutosRestantes != 1) "s" else ""
             )
             Spacer(Modifier.height(12.dp))
         } else if (uiState.error != null) {
@@ -116,6 +120,7 @@ fun AuthScreen(
 private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
+    val correoConError = correo.isNotBlank() && !esCorreoValido(correo)
 
     Column {
         OutlinedTextField(
@@ -123,6 +128,10 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
             onValueChange = { correo = it },
             label = { Text("Correo electrónico") },
             singleLine = true,
+            isError = correoConError,
+            supportingText = {
+                if (correoConError) Text("Formato de correo inválido")
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
@@ -140,7 +149,7 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
         GradientButton(
             text = "Iniciar sesión",
             isLoading = isLoading,
-            enabled = correo.isNotBlank() && contrasena.isNotBlank(),
+            enabled = esCorreoValido(correo) && contrasena.isNotBlank(),
             onClick = { onSubmit(correo.trim(), contrasena) }
         )
     }
@@ -156,10 +165,11 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
     var direccion by remember { mutableStateOf("") }
     var rol by remember { mutableStateOf(Rol.CLIENTE) }
     var oficio by remember { mutableStateOf("") }
+    val correoConError = correo.isNotBlank() && !esCorreoValido(correo)
 
     val camposOk = nombre.isNotBlank() && apellido.isNotBlank() &&
-        correo.isNotBlank() && contrasena.length >= 6 &&
-        (rol != Rol.PROVEEDOR || oficio.isNotBlank())
+            esCorreoValido(correo) && contrasena.length >= 6 &&
+            (rol != Rol.PROVEEDOR || oficio.isNotBlank())
 
     Column {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -184,6 +194,10 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
             onValueChange = { correo = it },
             label = { Text("Correo electrónico") },
             singleLine = true,
+            isError = correoConError,
+            supportingText = {
+                if (correoConError) Text("Formato de correo inválido")
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
