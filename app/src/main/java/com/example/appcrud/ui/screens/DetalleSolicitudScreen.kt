@@ -58,7 +58,6 @@ fun DetalleSolicitudScreen(
     }
 
     if (confirmarCancelar) {
-        val ocupado = (solicitudActual.idSolicitud ?: -1) in uiState.procesando
         AlertDialog(
             onDismissRequest = { confirmarCancelar = false },
             title = { Text(stringResource(R.string.cancelar_solicitud)) },
@@ -71,7 +70,6 @@ fun DetalleSolicitudScreen(
                         }
                         confirmarCancelar = false
                     },
-                    enabled = !ocupado,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) { Text(stringResource(R.string.cancelar_solicitud)) }
             },
@@ -170,7 +168,6 @@ fun DetalleSolicitudScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                val ocupado = (solicitudActual.idSolicitud ?: -1) in uiState.procesando
                 if (esProveedor) {
                     when (solicitudActual.estado) {
                         EstadoSolicitud.PENDIENTE -> {
@@ -181,7 +178,6 @@ fun DetalleSolicitudScreen(
                                             viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
                                         }
                                     },
-                                    enabled = !ocupado,
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                                 ) { Text(stringResource(R.string.rechazar)) }
@@ -191,15 +187,8 @@ fun DetalleSolicitudScreen(
                                             viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA)
                                         }
                                     },
-                                    enabled = !ocupado,
                                     modifier = Modifier.weight(1f)
-                                ) {
-                                    if (ocupado) {
-                                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                                    } else {
-                                        Text(stringResource(R.string.aceptar))
-                                    }
-                                }
+                                ) { Text(stringResource(R.string.aceptar)) }
                             }
                         }
                         EstadoSolicitud.ACEPTADA -> {
@@ -209,15 +198,8 @@ fun DetalleSolicitudScreen(
                                         viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO)
                                     }
                                 },
-                                enabled = !ocupado,
                                 modifier = Modifier.fillMaxWidth()
-                            ) {
-                                if (ocupado) {
-                                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                                } else {
-                                    Text(stringResource(R.string.iniciar_trabajo))
-                                }
-                            }
+                            ) { Text(stringResource(R.string.iniciar_trabajo)) }
                         }
                         EstadoSolicitud.EN_PROCESO -> {
                             Button(
@@ -226,15 +208,8 @@ fun DetalleSolicitudScreen(
                                         viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA)
                                     }
                                 },
-                                enabled = !ocupado,
                                 modifier = Modifier.fillMaxWidth()
-                            ) {
-                                if (ocupado) {
-                                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                                } else {
-                                    Text(stringResource(R.string.marcar_completado))
-                                }
-                            }
+                            ) { Text(stringResource(R.string.marcar_completado)) }
                         }
                     }
                 } else {

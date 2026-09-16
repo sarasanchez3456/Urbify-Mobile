@@ -59,8 +59,6 @@ dependencies {
     implementation(libs.play.services.location)
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.mockk)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
