@@ -4,16 +4,14 @@
    for details.
 -->
 <data-extraction-rules>
+    <!-- El DataStore de sesión guarda el token JWT. Se excluye tanto de la
+         copia en la nube como de la transferencia directa entre
+         dispositivos para que la sesión no viaje fuera del dispositivo
+         original. -->
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="file" path="datastore/urbify_session.preferences_pb" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="file" path="datastore/urbify_session.preferences_pb" />
     </device-transfer>
-    -->
 </data-extraction-rules>
