@@ -42,6 +42,7 @@ fun DetalleSolicitudScreen(
     }
 
     val solicitudActual = uiState.solicitudes.firstOrNull { it.idSolicitud == solicitud.idSolicitud } ?: solicitud
+    val defaultTituloServicio = stringResource(R.string.servicio_label)
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
@@ -219,7 +220,7 @@ fun DetalleSolicitudScreen(
                                 onCalificar(
                                     solicitudActual.idSolicitud,
                                     solicitudActual.idProveedor,
-                                    solicitudActual.tituloServicio ?: stringResource(R.string.servicio_label)
+                                    solicitudActual.tituloServicio ?: defaultTituloServicio
                                 )
                             },
                             modifier = Modifier.fillMaxWidth()

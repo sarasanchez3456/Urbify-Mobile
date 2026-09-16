@@ -225,6 +225,8 @@ private fun rememberOsmMapView(
         }
     }
 
+    val tuUbicacion = stringResource(R.string.tu_ubicacion)
+
     LaunchedEffect(userLat, userLng, proveedores) {
         mapView.controller.setZoom(13.0)
         mapView.controller.setCenter(GeoPoint(userLat, userLng))
@@ -232,7 +234,7 @@ private fun rememberOsmMapView(
 
         Marker(mapView).apply {
             position = GeoPoint(userLat, userLng)
-            title = context.getString(R.string.tu_ubicacion)
+            title = tuUbicacion
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             mapView.overlays.add(this)
         }

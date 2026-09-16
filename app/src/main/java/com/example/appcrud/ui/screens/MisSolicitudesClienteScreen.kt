@@ -145,6 +145,7 @@ private fun SolicitudClienteCard(
     onCalificar: (Int, Int, String) -> Unit,
     onCancelar: (Int) -> Unit
 ) {
+    val defaultTituloServicio = stringResource(R.string.servicio_label)
     val estadoColor = when (solicitud.estado) {
         EstadoSolicitud.PENDIENTE -> MaterialTheme.colorScheme.secondary
         EstadoSolicitud.ACEPTADA -> MaterialTheme.colorScheme.tertiary
@@ -227,7 +228,7 @@ private fun SolicitudClienteCard(
                         onCalificar(
                             solicitud.idSolicitud,
                             solicitud.idProveedor,
-                            solicitud.tituloServicio ?: stringResource(R.string.servicio_label)
+                            solicitud.tituloServicio ?: defaultTituloServicio
                         )
                     },
                     modifier = Modifier.fillMaxWidth()

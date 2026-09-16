@@ -630,7 +630,7 @@ private fun SolicitudActivaCard(solicitud: Solicitud, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = solicitud.nombreProveedor?.let { stringResource(R.string.conProveedor, it) } ?: stringResource(R.string.buscando_proveedor),
+                    text = solicitud.nombreProveedor?.let { stringResource(R.string.proveedor_label, it) } ?: stringResource(R.string.buscando_proveedor),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextoTenue,
                     maxLines = 1,
