@@ -4,6 +4,36 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+/**
+ * URLs configurables mediante -P<ENTORNO>_API_BASE_URL, gradle.properties o
+ * local.properties. Retrofit exige que la URL base termine en '/'.
+ */
+fun apiBaseUrl(propertyName: String, defaultValue: String, requireHttps: Boolean = false): String {
+    val value = providers.gradleProperty(propertyName).orElse(defaultValue).get()
+    require(value.endsWith('/')) { "$propertyName debe terminar en /" }
+    if (requireHttps) {
+        require(value.startsWith("https://")) { "$propertyName debe usar HTTPS" }
+    }
+    return value
+}
+
+fun String.asBuildConfigValue(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val developmentApiBaseUrl = apiBaseUrl(
+    propertyName = "DEVELOPMENT_API_BASE_URL",
+    defaultValue = "http://10.0.2.2:4000/api/"
+)
+val stagingApiBaseUrl = apiBaseUrl(
+    propertyName = "STAGING_API_BASE_URL",
+    defaultValue = "https://staging-api.urbify.example/api/",
+    requireHttps = true
+)
+val productionApiBaseUrl = apiBaseUrl(
+    propertyName = "PRODUCTION_API_BASE_URL",
+    defaultValue = "https://api.urbify.example/api/",
+    requireHttps = true
+)
+
 android {
     namespace = "com.example.appcrud"
     compileSdk {
@@ -18,6 +48,34 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["usesCleartextTraffic"] = "false"
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("development") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            buildConfigField("String", "API_BASE_URL", developmentApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "true")
+            // Es el único entorno que puede apuntar al backend HTTP local.
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            buildConfigField("String", "API_BASE_URL", stagingApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
+        create("production") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", productionApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
     }
 
     buildTypes {
@@ -34,6 +92,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
