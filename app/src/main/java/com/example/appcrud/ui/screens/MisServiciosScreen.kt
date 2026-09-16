@@ -24,6 +24,7 @@ import com.example.appcrud.ui.viewmodel.MisServiciosViewModel
 fun MisServiciosScreen(
     onCrear: () -> Unit,
     onEditar: (Int) -> Unit,
+    refreshTrigger: Int = 0,
     viewModel: MisServiciosViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -33,6 +34,7 @@ fun MisServiciosScreen(
     val defaultError = stringResource(R.string.error_prefijo, "")
 
     LaunchedEffect(Unit) { viewModel.cargar() }
+    LaunchedEffect(refreshTrigger) { if (refreshTrigger > 0) viewModel.recargar() }
 
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
@@ -59,6 +61,7 @@ fun MisServiciosScreen(
                         viewModel.eliminar(servicioAEliminar!!.idServicio!!)
                         servicioAEliminar = null
                     },
+                    enabled = !uiState.isEliminando,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) { Text(stringResource(R.string.eliminar)) }
             },

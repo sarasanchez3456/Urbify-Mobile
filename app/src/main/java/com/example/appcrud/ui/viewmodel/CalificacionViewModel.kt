@@ -17,9 +17,9 @@ data class CalificacionUiState(
     val successMessage: String? = null
 )
 
-class CalificacionViewModel : ViewModel() {
-
-    private val repository = CalificacionRepository()
+class CalificacionViewModel(
+    private val repository: CalificacionRepository = CalificacionRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalificacionUiState())
     val uiState: StateFlow<CalificacionUiState> = _uiState.asStateFlow()
@@ -41,6 +41,8 @@ class CalificacionViewModel : ViewModel() {
         }
     }
 
+    fun recargar(proveedorId: Int) = loadCalificacionesProveedor(proveedorId)
+
     fun createCalificacion(
         idSolicitud: Int,
         idProveedor: Int,
@@ -48,8 +50,9 @@ class CalificacionViewModel : ViewModel() {
         comentario: String,
         onSuccess: () -> Unit
     ) {
+        if (_uiState.value.isLoading) return
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 val calificacion = Calificacion(
                     idSolicitud = idSolicitud,
@@ -77,6 +80,7 @@ class CalificacionViewModel : ViewModel() {
     }
 
     fun updateCalificacion(id: Int, calificacion: Calificacion) {
+        val previo = _uiState.value.calificaciones
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
@@ -96,6 +100,7 @@ class CalificacionViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
+                        calificaciones = previo,
                         isLoading = false,
                         error = e.message ?: "Error al actualizar calificación"
                     )
@@ -105,6 +110,7 @@ class CalificacionViewModel : ViewModel() {
     }
 
     fun deleteCalificacion(id: Int) {
+        val previo = _uiState.value.calificaciones
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
@@ -120,6 +126,7 @@ class CalificacionViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
+                        calificaciones = previo,
                         isLoading = false,
                         error = e.message ?: "Error al eliminar calificación"
                     )

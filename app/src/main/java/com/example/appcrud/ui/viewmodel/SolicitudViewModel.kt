@@ -19,9 +19,9 @@ data class SolicitudUiState(
     val procesando: Set<Int> = emptySet(),
 )
 
-class SolicitudViewModel : ViewModel() {
-
-    private val repository = SolicitudRepository()
+class SolicitudViewModel(
+    private val repository: SolicitudRepository = SolicitudRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SolicitudUiState())
     val uiState: StateFlow<SolicitudUiState> = _uiState.asStateFlow()
@@ -54,8 +54,9 @@ class SolicitudViewModel : ViewModel() {
     }
 
     fun createSolicitud(idServicio: Int, mensaje: String, direccion: String, onSuccess: () -> Unit) {
+        if (_uiState.value.isLoading) return
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 repository.createSolicitud(Solicitud(idServicio = idServicio, mensaje = mensaje, direccion = direccion))
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")

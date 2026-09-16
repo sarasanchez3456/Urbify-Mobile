@@ -27,6 +27,7 @@ fun HistorialCalificacionesScreen(
     nombreProveedor: String,
     clienteId: Int? = null,
     onBack: () -> Unit,
+    refreshTrigger: Int = 0,
     viewModel: CalificacionViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -36,6 +37,9 @@ fun HistorialCalificacionesScreen(
 
     LaunchedEffect(Unit) {
         viewModel.loadCalificacionesProveedor(proveedorId)
+    }
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) viewModel.recargar(proveedorId)
     }
 
     val defaultError = stringResource(R.string.error_prefijo, "")
