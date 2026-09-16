@@ -54,6 +54,7 @@ fun DetalleSolicitudScreen(
     }
 
     if (confirmarCancelar) {
+        val ocupado = (solicitudActual.idSolicitud ?: -1) in uiState.procesando
         AlertDialog(
             onDismissRequest = { confirmarCancelar = false },
             title = { Text("Cancelar solicitud") },
@@ -66,6 +67,7 @@ fun DetalleSolicitudScreen(
                         }
                         confirmarCancelar = false
                     },
+                    enabled = !ocupado,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) { Text("Cancelar solicitud") }
             },
@@ -167,6 +169,7 @@ fun DetalleSolicitudScreen(
                     CircularProgressIndicator()
                 }
             } else {
+                val ocupado = (solicitudActual.idSolicitud ?: -1) in uiState.procesando
                 if (esProveedor) {
                     when (solicitudActual.estado) {
                         EstadoSolicitud.PENDIENTE -> {
@@ -177,6 +180,7 @@ fun DetalleSolicitudScreen(
                                             viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
                                         }
                                     },
+                                    enabled = !ocupado,
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                                 ) { Text("Rechazar") }
@@ -186,8 +190,15 @@ fun DetalleSolicitudScreen(
                                             viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA)
                                         }
                                     },
+                                    enabled = !ocupado,
                                     modifier = Modifier.weight(1f)
-                                ) { Text("Aceptar") }
+                                ) {
+                                    if (ocupado) {
+                                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                    } else {
+                                        Text("Aceptar")
+                                    }
+                                }
                             }
                         }
                         EstadoSolicitud.ACEPTADA -> {
@@ -197,8 +208,15 @@ fun DetalleSolicitudScreen(
                                         viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO)
                                     }
                                 },
+                                enabled = !ocupado,
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("Iniciar trabajo") }
+                                ) {
+                                    if (ocupado) {
+                                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                    } else {
+                                        Text("Iniciar trabajo")
+                                    }
+                                }
                         }
                         EstadoSolicitud.EN_PROCESO -> {
                             Button(
@@ -207,8 +225,15 @@ fun DetalleSolicitudScreen(
                                         viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA)
                                     }
                                 },
+                                enabled = !ocupado,
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("Marcar como completado") }
+                                ) {
+                                    if (ocupado) {
+                                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                                    } else {
+                                        Text("Marcar como completado")
+                                    }
+                                }
                         }
                     }
                 } else {
