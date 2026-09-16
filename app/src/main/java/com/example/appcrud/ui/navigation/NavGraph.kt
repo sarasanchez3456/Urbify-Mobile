@@ -17,6 +17,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.session.SessionEvents
 import com.example.appcrud.ui.screens.*
 import com.example.appcrud.ui.viewmodel.SessionViewModel
 import com.google.gson.Gson
@@ -84,6 +85,18 @@ fun AppNavGraph(
     val currentRoute = navBackStackEntry?.destination?.route
 
     val showBottomBar = currentRoute in bottomBarRoutes
+
+    // Si el backend responde 401 en cualquier pantalla, el interceptor de
+    // Retrofit ya limpió el token; aquí solo reaccionamos limpiando la
+    // sesión en memoria y devolviendo al usuario a login.
+    LaunchedEffect(Unit) {
+        SessionEvents.sessionExpired.collect {
+            sessionViewModel.clearLocalSession()
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
