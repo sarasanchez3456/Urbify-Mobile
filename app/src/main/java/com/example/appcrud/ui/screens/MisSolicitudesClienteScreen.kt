@@ -24,7 +24,7 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 @Composable
 fun MisSolicitudesClienteScreen(
     onBack: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onDetalle: (Solicitud, Boolean) -> Unit = { _, _ -> },
     viewModel: SolicitudViewModel = viewModel()
 ) {
@@ -140,7 +140,7 @@ fun MisSolicitudesClienteScreen(
 private fun SolicitudClienteCard(
     solicitud: Solicitud,
     onClick: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onCancelar: (Int) -> Unit
 ) {
     val estadoColor = when (solicitud.estado) {
@@ -224,8 +224,7 @@ private fun SolicitudClienteCard(
                     onClick = {
                         onCalificar(
                             solicitud.idSolicitud,
-                            solicitud.idProveedor,
-                            solicitud.tituloServicio ?: "Servicio"
+                            solicitud.idProveedor
                         )
                     },
                     modifier = Modifier.fillMaxWidth()

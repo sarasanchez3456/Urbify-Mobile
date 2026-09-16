@@ -20,6 +20,12 @@ class SolicitudRepository {
         return api.getSolicitudesProveedor()
     }
 
+    /** El backend expone las solicitudes por rol, no un endpoint individual. */
+    suspend fun getSolicitud(idSolicitud: Int, esProveedor: Boolean): Solicitud? {
+        val solicitudes = if (esProveedor) getSolicitudesProveedor() else getSolicitudesCliente()
+        return solicitudes.firstOrNull { it.idSolicitud == idSolicitud }
+    }
+
     suspend fun cambiarEstado(id: Int, estado: String) {
         api.cambiarEstadoSolicitud(id, EstadoUpdateRequest(estado))
     }
