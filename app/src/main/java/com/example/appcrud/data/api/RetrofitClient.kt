@@ -1,5 +1,6 @@
 package com.example.appcrud.data.api
 
+import com.example.appcrud.data.session.SessionEvents
 import com.example.appcrud.data.session.TokenManager
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
@@ -9,8 +10,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // 10.0.2.2 = "localhost" del host visto desde el emulador de Android.
-    private const val BASE_URL = "http://10.0.2.2:4000/api/"
+    // localhost invertido mediante adb reverse para saltar el Firewall de Windows.
+    private const val BASE_URL = "http://127.0.0.1:4000/api/"
 
     private val gson = GsonBuilder()
         .setLenient()
@@ -29,8 +30,32 @@ object RetrofitClient {
         chain.proceed(request)
     }
 
+    // Solo se registra el cuerpo completo de las peticiones en debug. En
+    // release nunca se loguean headers ni cuerpos, para no exponer el token
+    // ni datos personales en los logs de producción.
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        val isDebug = try {
+            val clazz = Class.forName("com.example.appcrud.BuildConfig")
+            clazz.getField("DEBUG").getBoolean(null)
+        } catch (_: Exception) {
+            true
+        }
+        level = if (isDebug) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
+    }
+
+    // Si el backend responde 401, la sesión ya no es válida: se limpia el
+    // token guardado y se avisa a la UI para que vuelva a login.
+    private val sessionExpiryInterceptor = Interceptor { chain ->
+        val response = chain.proceed(chain.request())
+        if (response.code == 401) {
+            TokenManager.clearTokenImmediate()
+            SessionEvents.notifySessionExpired()
+        }
+        response
     }
 
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake
@@ -40,6 +65,7 @@ object RetrofitClient {
     // `SET NAMES utf8mb4` y datos reparados).
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .addInterceptor(sessionExpiryInterceptor)
         .addInterceptor(logging)
         .build()
 
