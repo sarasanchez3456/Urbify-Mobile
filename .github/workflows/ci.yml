@@ -12,7 +12,6 @@ jobs:
 
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
-      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
 
     steps:
       - uses: actions/checkout@v4
@@ -26,18 +25,14 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Install SDK platform and build tools
-        run: |
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-37" "build-tools;36.0.0"
-
       - name: Build
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew lintDebug --no-daemon
 
       - name: Upload lint report
         if: always()
