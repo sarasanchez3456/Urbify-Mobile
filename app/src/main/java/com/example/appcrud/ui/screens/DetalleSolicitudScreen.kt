@@ -12,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
@@ -32,12 +34,13 @@ fun DetalleSolicitudScreen(
     var confirmarCancelar by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val defaultError = stringResource(R.string.error_prefijo, "")
+
     LaunchedEffect(Unit) {
         if (esProveedor) viewModel.loadSolicitudesProveedor()
         else viewModel.loadSolicitudesCliente()
     }
 
-    // reflect state changes made from this screen
     val solicitudActual = uiState.solicitudes.firstOrNull { it.idSolicitud == solicitud.idSolicitud } ?: solicitud
 
     LaunchedEffect(uiState.successMessage) {
@@ -48,7 +51,7 @@ fun DetalleSolicitudScreen(
     }
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
             viewModel.clearMessages()
         }
     }
@@ -56,8 +59,8 @@ fun DetalleSolicitudScreen(
     if (confirmarCancelar) {
         AlertDialog(
             onDismissRequest = { confirmarCancelar = false },
-            title = { Text("Cancelar solicitud") },
-            text = { Text("¿Estás seguro de que quieres cancelar esta solicitud?") },
+            title = { Text(stringResource(R.string.cancelar_solicitud)) },
+            text = { Text(stringResource(R.string.estas_seguro_cancelar)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -67,10 +70,10 @@ fun DetalleSolicitudScreen(
                         confirmarCancelar = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Cancelar solicitud") }
+                ) { Text(stringResource(R.string.cancelar_solicitud)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmarCancelar = false }) { Text("Mantener") }
+                TextButton(onClick = { confirmarCancelar = false }) { Text(stringResource(R.string.mantener)) }
             }
         )
     }
@@ -88,10 +91,10 @@ fun DetalleSolicitudScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Detalle de solicitud") },
+                title = { Text(stringResource(R.string.detalle_solicitud)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -105,14 +108,13 @@ fun DetalleSolicitudScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // header — service title + badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = solicitudActual.tituloServicio ?: "Servicio",
+                    text = solicitudActual.tituloServicio ?: stringResource(R.string.servicio_label),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
@@ -136,32 +138,30 @@ fun DetalleSolicitudScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // details
             if (esProveedor) {
                 solicitudActual.nombreCliente?.let {
-                    CampoDetalle(Icons.Default.Person, "Cliente", it)
+                    CampoDetalle(Icons.Default.Person, stringResource(R.string.cliente), it)
                 }
             } else {
                 solicitudActual.nombreProveedor?.let {
-                    CampoDetalle(Icons.Default.Person, "Proveedor", it)
+                    CampoDetalle(Icons.Default.Person, stringResource(R.string.proveedor), it)
                 }
             }
 
             solicitudActual.direccion?.let {
-                CampoDetalle(Icons.Default.LocationOn, "Dirección", it)
+                CampoDetalle(Icons.Default.LocationOn, stringResource(R.string.direccion), it)
             }
 
             solicitudActual.mensaje?.let {
-                CampoDetalle(Icons.AutoMirrored.Filled.Message, "Mensaje", it)
+                CampoDetalle(Icons.AutoMirrored.Filled.Message, stringResource(R.string.mensaje), it)
             }
 
             solicitudActual.fechaSolicitud?.let {
-                CampoDetalle(Icons.Default.CalendarToday, "Fecha", it)
+                CampoDetalle(Icons.Default.CalendarToday, stringResource(R.string.fecha), it)
             }
 
             Spacer(Modifier.height(28.dp))
 
-            // actions
             if (uiState.isLoading) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -179,7 +179,7 @@ fun DetalleSolicitudScreen(
                                     },
                                     modifier = Modifier.weight(1f),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) { Text("Rechazar") }
+                                ) { Text(stringResource(R.string.rechazar)) }
                                 Button(
                                     onClick = {
                                         solicitudActual.idSolicitud?.let {
@@ -187,7 +187,7 @@ fun DetalleSolicitudScreen(
                                         }
                                     },
                                     modifier = Modifier.weight(1f)
-                                ) { Text("Aceptar") }
+                                ) { Text(stringResource(R.string.aceptar)) }
                             }
                         }
                         EstadoSolicitud.ACEPTADA -> {
@@ -198,7 +198,7 @@ fun DetalleSolicitudScreen(
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("Iniciar trabajo") }
+                            ) { Text(stringResource(R.string.iniciar_trabajo)) }
                         }
                         EstadoSolicitud.EN_PROCESO -> {
                             Button(
@@ -208,7 +208,7 @@ fun DetalleSolicitudScreen(
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth()
-                            ) { Text("Marcar como completado") }
+                            ) { Text(stringResource(R.string.marcar_completado)) }
                         }
                     }
                 } else {
@@ -219,14 +219,14 @@ fun DetalleSolicitudScreen(
                                 onCalificar(
                                     solicitudActual.idSolicitud,
                                     solicitudActual.idProveedor,
-                                    solicitudActual.tituloServicio ?: "Servicio"
+                                    solicitudActual.tituloServicio ?: stringResource(R.string.servicio_label)
                                 )
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Calificar servicio")
+                            Text(stringResource(R.string.calificar_servicio))
                         }
                         Spacer(Modifier.height(8.dp))
                     }
@@ -238,7 +238,7 @@ fun DetalleSolicitudScreen(
                         ) {
                             Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Cancelar solicitud")
+                            Text(stringResource(R.string.cancelar_solicitud))
                         }
                     }
                 }
