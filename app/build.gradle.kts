@@ -35,6 +35,32 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // mockk-android trae transitivamente JUnit 5 (jupiter), que duplica
+    // archivos META-INF/LICENSE* con otras libs de test al empaquetar el APK
+    // de androidTest. Son metadata de licencia, no código: excluirlos del
+    // empaquetado es la solución estándar de AGP para este conflicto.
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+            )
+        }
+    }
+}
+
+// runTest/UnconfinedTestDispatcher/setMain/resetMain (kotlinx-coroutines-test)
+// son @ExperimentalCoroutinesApi; en vez de un @OptIn por archivo de test, se
+// habilita acá para todo el módulo.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
+    }
 }
 
 dependencies {
@@ -59,10 +85,21 @@ dependencies {
     implementation(libs.play.services.location)
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.mockk)
+    // MockK 1.13.13 trae transitivamente una versión de ByteBuddy que no
+    // soporta JDKs muy nuevos (falla con "Java N is not supported by the
+    // current version of Byte Buddy"). Forzamos una versión más nueva en el
+    // classpath de test — Gradle resuelve a la más alta entre las
+    // declaradas, así que esto sobreescribe la transitiva de MockK.
+    testImplementation(libs.byte.buddy)
+    testImplementation(libs.byte.buddy.agent)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.mockk.android)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
