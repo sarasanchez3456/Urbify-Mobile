@@ -62,21 +62,6 @@ android {
         }
     }
 
-    // Falla explícita y temprano si falta la firma de producción, en vez de
-    // dejar que assembleRelease/bundleRelease caiga en un error críptico de
-    // Gradle sobre "storeFile no configurado". Ver docs/RELEASE_SIGNING.md.
-    gradle.taskGraph.whenReady {
-        val runningRelease = allTasks.any {
-            it.path.endsWith("assembleRelease") || it.path.endsWith("bundleRelease")
-        }
-        if (runningRelease && signingConfigs.getByName("release").storeFile == null) {
-            throw GradleException(
-                "Falta la firma de release. Configura keystore.properties (local) o las " +
-                    "variables de entorno RELEASE_STORE_FILE / RELEASE_STORE_PASSWORD / " +
-                    "RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD (CI). Ver docs/RELEASE_SIGNING.md."
-            )
-        }
-    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -85,6 +70,66 @@ android {
         compose = true
     }
 }
+
+// Verificación temprana y config-cache-friendly de la firma de release.
+//
+// A propósito NO usa gradle.taskGraph.whenReady: esa API captura una
+// referencia viva al Project/TaskExecutionGraph dentro del closure, lo cual
+// es frágil con la configuration cache (y está marcada para deprecación en
+// builds futuras). En su lugar, registramos una tarea normal que resuelve y
+// captura los valores durante la fase de configuración (variables locales
+// Serializable, no objetos del modelo de Gradle) y sólo lee/valida esos
+// valores dentro de doLast — el patrón recomendado por Gradle para tareas
+// compatibles con configuration cache.
+//
+// El error nombra qué propiedades faltan (storeFile/storePassword/keyAlias/
+// keyPassword) o si el archivo del keystore no existe/no se puede leer, pero
+// nunca imprime valores de password/alias — sólo nombres de propiedades y la
+// ruta (no secreta) del keystore.
+val checkReleaseSigningConfig = tasks.register("checkReleaseSigningConfig") {
+    group = "verification"
+    description = "Falla con un mensaje claro si falta o es inválida la firma de release."
+
+    val storeFilePath = releaseSigningValue("storeFile", "RELEASE_STORE_FILE")
+    val hasStorePassword = releaseSigningValue("storePassword", "RELEASE_STORE_PASSWORD") != null
+    val hasKeyAlias = releaseSigningValue("keyAlias", "RELEASE_KEY_ALIAS") != null
+    val hasKeyPassword = releaseSigningValue("keyPassword", "RELEASE_KEY_PASSWORD") != null
+    val resolvedStoreFile = storeFilePath?.let { rootProject.file(it) }
+
+    doLast {
+        val faltantes = buildList {
+            if (storeFilePath == null) add("storeFile")
+            if (!hasStorePassword) add("storePassword")
+            if (!hasKeyAlias) add("keyAlias")
+            if (!hasKeyPassword) add("keyPassword")
+        }
+        if (faltantes.isNotEmpty()) {
+            throw GradleException(
+                "Falta configurar la firma de release: ${faltantes.joinToString(", ")}. " +
+                    "Completá keystore.properties (local, gitignored) o las variables de " +
+                    "entorno RELEASE_STORE_FILE / RELEASE_STORE_PASSWORD / RELEASE_KEY_ALIAS " +
+                    "/ RELEASE_KEY_PASSWORD (CI). Ver docs/RELEASE_SIGNING.md."
+            )
+        }
+        checkNotNull(resolvedStoreFile) // no debería poder ser null si faltantes está vacío
+        if (!resolvedStoreFile.exists()) {
+            throw GradleException(
+                "El keystore de release configurado en storeFile no existe: " +
+                    "${resolvedStoreFile.path}. Verificá la ruta en keystore.properties o en " +
+                    "RELEASE_STORE_FILE."
+            )
+        }
+        if (!resolvedStoreFile.canRead()) {
+            throw GradleException(
+                "El keystore de release configurado en storeFile no se puede leer " +
+                    "(permisos del archivo): ${resolvedStoreFile.path}."
+            )
+        }
+    }
+}
+
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+    .configureEach { dependsOn(checkReleaseSigningConfig) }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
