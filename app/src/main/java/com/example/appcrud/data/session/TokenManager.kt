@@ -52,6 +52,13 @@ object TokenManager {
     private var dataStore: DataStore<Preferences>? = null
     private var collectJob: Job? = null
 
+    // Incrementada en cada init()/shutdown(). job.cancel() es asíncrono: no
+    // garantiza que un collector viejo deje de emitir de inmediato. Sin esta
+    // guarda, un collector recién cancelado podía ganarle la carrera a un
+    // init() nuevo y pisar _state con un valor obsoleto (visto como
+    // flakiness real en tests que llaman init()/shutdown() repetidas veces).
+    private var currentGeneration = 0L
+
     fun init(context: Context) {
         init(context.applicationContext.dataStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
     }
@@ -65,6 +72,8 @@ object TokenManager {
     @Synchronized
     internal fun init(dataStore: DataStore<Preferences>, scope: CoroutineScope) {
         collectJob?.cancel()
+        currentGeneration++
+        val myGeneration = currentGeneration
         this.dataStore = dataStore
         _state.value = TokenState.Loading
         collectJob = scope.launch {
@@ -73,7 +82,11 @@ object TokenManager {
                     if (e is IOException) emit(emptyPreferences()) else throw e
                 }
                 .map { it[TOKEN_KEY] }
-                .collect { _state.value = TokenState.Ready(it) }
+                .collect { token ->
+                    if (myGeneration == currentGeneration) {
+                        _state.value = TokenState.Ready(token)
+                    }
+                }
         }
     }
 
@@ -117,6 +130,7 @@ object TokenManager {
         collectJob?.cancel()
         collectJob = null
         dataStore = null
+        currentGeneration++ // invalida cualquier emisión del collector cancelado que aún esté en vuelo
         _state.value = TokenState.Loading
     }
 }
