@@ -117,28 +117,28 @@ fun MisSolicitudesClienteScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                    items(uiState.solicitudes) { solicitud ->
-                        val ocupado = (solicitud.idSolicitud ?: -1) in uiState.procesando
-                        if (mostrarProveedor) {
-                            SolicitudProveedorInlineCard(
-                                solicitud = solicitud,
-                                procesando = ocupado,
-                                onClick = { onDetalle(solicitud, true) },
-                                onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
-                                onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
-                                onIniciar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
-                                onCompletar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA) } }
-                            )
-                        } else {
-                            SolicitudClienteCard(
-                                solicitud = solicitud,
-                                procesando = ocupado,
-                                onClick = { onDetalle(solicitud, false) },
-                                onCalificar = onCalificar,
-                                onCancelar = { id -> viewModel.cambiarEstado(id, EstadoSolicitud.CANCELADA) }
-                            )
+                        items(uiState.solicitudes) { solicitud ->
+                            val ocupado = (solicitud.idSolicitud ?: -1) in uiState.procesando
+                            if (mostrarProveedor) {
+                                SolicitudProveedorInlineCard(
+                                    solicitud = solicitud,
+                                    procesando = ocupado,
+                                    onClick = { onDetalle(solicitud, true) },
+                                    onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
+                                    onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
+                                    onIniciar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
+                                    onCompletar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA) } }
+                                )
+                            } else {
+                                SolicitudClienteCard(
+                                    solicitud = solicitud,
+                                    procesando = ocupado,
+                                    onClick = { onDetalle(solicitud, false) },
+                                    onCalificar = onCalificar,
+                                    onCancelar = { id -> viewModel.cambiarEstado(id, EstadoSolicitud.CANCELADA) }
+                                )
+                            }
                         }
-                    }
                     }
                 }
             }
@@ -373,7 +373,7 @@ private fun SolicitudProveedorInlineCard(
                             )
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text("Rechazar")
                         }
                         Button(
@@ -385,13 +385,12 @@ private fun SolicitudProveedorInlineCard(
                                 CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                             } else {
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(Modifier.width(4.dp))
                                 Text("Aceptar")
                             }
                         }
                     }
                 }
-                EstadoSolicitud.ACEPTADA -> {
                 EstadoSolicitud.ACEPTADA -> {
                     Button(onClick = onIniciar, enabled = !procesando, modifier = Modifier.fillMaxWidth()) {
                         if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
@@ -403,7 +402,6 @@ private fun SolicitudProveedorInlineCard(
                         if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                         else Text("Marcar como completado")
                     }
-                }
                 }
             }
         }
