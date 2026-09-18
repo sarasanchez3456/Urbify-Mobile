@@ -18,9 +18,9 @@ data class ProveedoresCercanosUiState(
     val radioKm: Double = 5.0
 )
 
-class ProveedoresCercanosViewModel : ViewModel() {
-
-    private val repository = ProveedorRepository()
+class ProveedoresCercanosViewModel @JvmOverloads constructor(
+    private val repository: ProveedorRepository = ProveedorRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProveedoresCercanosUiState())
     val uiState: StateFlow<ProveedoresCercanosUiState> = _uiState.asStateFlow()

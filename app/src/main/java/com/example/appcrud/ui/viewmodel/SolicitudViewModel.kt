@@ -19,9 +19,9 @@ data class SolicitudUiState(
     val procesando: Set<Int> = emptySet(),
 )
 
-class SolicitudViewModel : ViewModel() {
-
-    private val repository = SolicitudRepository()
+class SolicitudViewModel @JvmOverloads constructor(
+    private val repository: SolicitudRepository = SolicitudRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SolicitudUiState())
     val uiState: StateFlow<SolicitudUiState> = _uiState.asStateFlow()

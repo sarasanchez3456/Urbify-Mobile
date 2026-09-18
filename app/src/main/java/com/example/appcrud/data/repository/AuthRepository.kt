@@ -1,5 +1,6 @@
 package com.example.appcrud.data.repository
 
+import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.AuthError
 import com.example.appcrud.data.model.AuthResponse
@@ -8,9 +9,7 @@ import com.example.appcrud.data.model.RegistroRequest
 import com.google.gson.Gson
 import retrofit2.HttpException
 
-class AuthRepository {
-
-    private val api = RetrofitClient.apiService
+class AuthRepository(private val api: ApiService = RetrofitClient.apiService) {
 
     suspend fun login(correo: String, contrasena: String): AuthResponse {
         return api.login(LoginRequest(correo, contrasena))
