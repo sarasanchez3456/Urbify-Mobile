@@ -213,7 +213,10 @@ val checkReleaseSigningConfig = tasks.register("checkReleaseSigningConfig") {
     }
 }
 
-tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+tasks.matching {
+    (it.name.startsWith("assemble") || it.name.startsWith("bundle")) &&
+        it.name.endsWith("Release")
+}
     .configureEach { dependsOn(checkReleaseSigningConfig) }
 
 dependencies {
