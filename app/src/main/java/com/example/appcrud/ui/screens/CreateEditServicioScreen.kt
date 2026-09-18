@@ -12,9 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.CreateEditServicioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +36,6 @@ fun CreateEditServicioScreen(
         if (uiState.success) onSuccess()
     }
 
-    // Pre-fill form from existing service when editing
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var precioTexto by remember { mutableStateOf("") }
@@ -67,10 +68,10 @@ fun CreateEditServicioScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (esEdicion) "Editar servicio" else "Nuevo servicio") },
+                title = { Text(if (esEdicion) stringResource(R.string.editar_servicio) else stringResource(R.string.nuevo_servicio)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -110,7 +111,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = titulo,
                         onValueChange = { titulo = it },
-                        label = { Text("Título del servicio *") },
+                        label = { Text(stringResource(R.string.titulo_servicio)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -118,7 +119,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = descripcion,
                         onValueChange = { descripcion = it },
-                        label = { Text("Descripción") },
+                        label = { Text(stringResource(R.string.descripcion)) },
                         minLines = 3,
                         maxLines = 5,
                         modifier = Modifier.fillMaxWidth()
@@ -127,7 +128,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = precioTexto,
                         onValueChange = { precioTexto = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("Precio (opcional)") },
+                        label = { Text(stringResource(R.string.precio_opcional)) },
                         prefix = { Text("$") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -142,7 +143,7 @@ fun CreateEditServicioScreen(
                             value = categoriaSeleccionada?.nombre ?: "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Categoría *") },
+                            label = { Text(stringResource(R.string.categoria)) },
                             trailingIcon = {
                                 Icon(
                                     if (dropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -190,7 +191,7 @@ fun CreateEditServicioScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text(if (esEdicion) "Guardar cambios" else "Publicar servicio")
+                            Text(if (esEdicion) stringResource(R.string.guardar_cambios) else stringResource(R.string.publicar_servicio))
                         }
                     }
                 }

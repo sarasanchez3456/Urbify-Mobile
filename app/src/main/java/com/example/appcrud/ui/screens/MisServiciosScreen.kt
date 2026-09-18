@@ -9,9 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.theme.UrbifyAmber
@@ -28,6 +30,8 @@ fun MisServiciosScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var servicioAEliminar by remember { mutableStateOf<Servicio?>(null) }
 
+    val defaultError = stringResource(R.string.error_prefijo, "")
+
     LaunchedEffect(Unit) { viewModel.cargar() }
 
     LaunchedEffect(uiState.successMessage) {
@@ -39,7 +43,7 @@ fun MisServiciosScreen(
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
             viewModel.clearMessages()
         }
     }
@@ -47,8 +51,8 @@ fun MisServiciosScreen(
     if (servicioAEliminar != null) {
         AlertDialog(
             onDismissRequest = { servicioAEliminar = null },
-            title = { Text("Eliminar servicio") },
-            text = { Text("¿Eliminar \"${servicioAEliminar!!.titulo}\"? Esta acción no se puede deshacer.") },
+            title = { Text(stringResource(R.string.eliminar_servicio)) },
+            text = { Text(stringResource(R.string.eliminar_servicio_pregunta, servicioAEliminar!!.titulo)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -56,10 +60,10 @@ fun MisServiciosScreen(
                         servicioAEliminar = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Eliminar") }
+                ) { Text(stringResource(R.string.eliminar)) }
             },
             dismissButton = {
-                TextButton(onClick = { servicioAEliminar = null }) { Text("Cancelar") }
+                TextButton(onClick = { servicioAEliminar = null }) { Text(stringResource(R.string.cancelar)) }
             }
         )
     }
@@ -67,13 +71,13 @@ fun MisServiciosScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(title = { Text("Mis servicios") })
+            TopAppBar(title = { Text(stringResource(R.string.mis_servicios)) })
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onCrear,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Nuevo servicio") }
+                text = { Text(stringResource(R.string.nuevo_servicio)) }
             )
         }
     ) { padding ->
@@ -88,9 +92,9 @@ fun MisServiciosScreen(
             uiState.servicios.isEmpty() -> {
                 EmptyState(
                     icon = Icons.Default.Build,
-                    title = "Aún no tienes servicios",
-                    subtitle = "Crea tu primer servicio para que los clientes puedan encontrarte",
-                    actionLabel = "Crear servicio",
+                    title = stringResource(R.string.aun_no_tienes_servicios),
+                    subtitle = stringResource(R.string.crea_primer_servicio),
+                    actionLabel = stringResource(R.string.crear_servicio),
                     onAction = onCrear,
                     modifier = Modifier.padding(padding)
                 )
@@ -151,14 +155,14 @@ private fun ServicioCard(
                     IconButton(onClick = onEditar) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "Editar",
+                            contentDescription = stringResource(R.string.editar),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = onEliminar) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Eliminar",
+                            contentDescription = stringResource(R.string.eliminar),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }

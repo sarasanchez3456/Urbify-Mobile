@@ -17,9 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.ui.components.EmptyState
@@ -38,7 +42,6 @@ fun CatalogoScreen(
     val uiState by viewModel.uiState.collectAsState()
     var busqueda by remember { mutableStateOf(queryInicial) }
 
-    // apply deep-link params once categories are loaded
     LaunchedEffect(queryInicial) {
         if (queryInicial.isNotBlank()) viewModel.buscarServicios(queryInicial)
     }
@@ -51,10 +54,10 @@ fun CatalogoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Categorías") },
+                title = { Text(stringResource(R.string.categorias)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -74,7 +77,7 @@ fun CatalogoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar servicios...") },
+                placeholder = { Text(stringResource(R.string.buscar_servicios)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (busqueda.isNotEmpty()) {
@@ -82,7 +85,7 @@ fun CatalogoScreen(
                             busqueda = ""
                             viewModel.buscarServicios("")
                         }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.limpiar))
                         }
                     }
                 },
@@ -101,9 +104,9 @@ fun CatalogoScreen(
                 uiState.error != null && uiState.categorias.isEmpty() -> {
                     EmptyState(
                         icon = Icons.Default.SearchOff,
-                        title = "Algo salió mal",
+                        title = stringResource(R.string.algo_sallo_mal),
                         subtitle = uiState.error,
-                        actionLabel = "Reintentar",
+                        actionLabel = stringResource(R.string.reintentar),
                         onAction = { viewModel.cargarCategorias() }
                     )
                 }
@@ -179,7 +182,7 @@ private fun ServiciosPorCategoria(
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
             }
             Text(
                 text = categoria.nombre,
@@ -190,8 +193,8 @@ private fun ServiciosPorCategoria(
         if (servicios.isEmpty()) {
             EmptyState(
                 icon = Icons.Default.SearchOff,
-                title = "No hay servicios",
-                subtitle = "Esta categoría no tiene servicios disponibles"
+                title = stringResource(R.string.no_hay_servicios),
+                subtitle = stringResource(R.string.categoria_sin_servicios)
             )
         } else {
             LazyColumn(
@@ -214,8 +217,8 @@ private fun ServiciosBusqueda(
     if (servicios.isEmpty()) {
         EmptyState(
             icon = Icons.Default.SearchOff,
-            title = "No se encontraron servicios",
-            subtitle = "Intenta con otro término de búsqueda"
+            title = stringResource(R.string.no_encontraron_servicios),
+            subtitle = stringResource(R.string.intentar_otro_termino)
         )
     } else {
         LazyColumn(
@@ -303,7 +306,7 @@ private fun ServicioCard(
                         leadingIcon = {
                             Icon(
                                 Icons.Filled.Star,
-                                contentDescription = "Calificación",
+                                contentDescription = stringResource(R.string.calificacion_label),
                                 tint = UrbifyPrimary,
                                 modifier = Modifier.size(16.dp)
                             )

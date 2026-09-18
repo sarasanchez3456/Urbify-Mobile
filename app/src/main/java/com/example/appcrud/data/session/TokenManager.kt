@@ -59,9 +59,6 @@ object TokenManager {
     // flakiness real en tests que llaman init()/shutdown() repetidas veces).
     private var currentGeneration = 0L
 
-    @Volatile
-    private var appContext: Context? = null
-
     fun init(context: Context) {
         init(context.applicationContext.dataStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
     }
@@ -144,10 +141,10 @@ object TokenManager {
      * borrado en DataStore se hace en segundo plano.
      */
     fun clearTokenImmediate() {
-        cachedToken = null
-        val context = appContext ?: return
+        _state.value = TokenState.Ready(null)
+        val activeDataStore = dataStore ?: return
         CoroutineScope(Dispatchers.IO).launch {
-            context.dataStore.edit { it.remove(TOKEN_KEY) }
+            activeDataStore.edit { it.remove(TOKEN_KEY) }
         }
     }
 }

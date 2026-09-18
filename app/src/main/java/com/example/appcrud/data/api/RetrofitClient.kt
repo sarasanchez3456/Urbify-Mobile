@@ -11,9 +11,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // 10.0.2.2 = "localhost" del host visto desde el emulador de Android.
-    private const val BASE_URL = "http://10.0.2.2:4000/api/"
-
     private val gson = GsonBuilder()
         .setLenient()
         .create()
@@ -31,13 +28,13 @@ object RetrofitClient {
         chain.proceed(request)
     }
 
-    internal fun httpLoggingLevel(isDebug: Boolean): HttpLoggingInterceptor.Level =
-        if (isDebug) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+    internal fun httpLoggingLevel(isEnabled: Boolean): HttpLoggingInterceptor.Level =
+        if (isEnabled) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
 
     // En desarrollo solo se registran líneas de petición y respuesta. Release
     // nunca registra headers ni cuerpos, para no exponer tokens o datos personales.
     private val logging = HttpLoggingInterceptor().apply {
-        level = httpLoggingLevel(BuildConfig.DEBUG)
+        level = httpLoggingLevel(BuildConfig.ENABLE_HTTP_LOGGING)
     }
 
     // Si el backend responde 401, la sesión ya no es válida: se limpia el
@@ -74,7 +71,7 @@ object RetrofitClient {
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(httpClient)
             .addConverterFactory(gsonConverter)
             .build()

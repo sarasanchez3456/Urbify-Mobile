@@ -7,6 +7,20 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+/** URLs configurables por entorno; Retrofit exige que terminen en '/'. */
+fun apiBaseUrl(propertyName: String, defaultValue: String, requireHttps: Boolean = false): String {
+    val value = providers.gradleProperty(propertyName).orElse(defaultValue).get()
+    require(value.endsWith('/')) { "$propertyName debe terminar en /" }
+    if (requireHttps) require(value.startsWith("https://")) { "$propertyName debe usar HTTPS" }
+    return value
+}
+
+fun String.asBuildConfigValue(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val developmentApiBaseUrl = apiBaseUrl("DEVELOPMENT_API_BASE_URL", "http://10.0.2.2:4000/api/")
+val stagingApiBaseUrl = apiBaseUrl("STAGING_API_BASE_URL", "https://staging-api.urbify.example/api/", requireHttps = true)
+val productionApiBaseUrl = apiBaseUrl("PRODUCTION_API_BASE_URL", "https://api.urbify.example/api/", requireHttps = true)
+
 // Firma de release: las credenciales NUNCA viven en este archivo ni en el repo.
 // Se leen de keystore.properties (local, gitignored) o, si no existe, de variables
 // de entorno (pensado para CI). Ver docs/RELEASE_SIGNING.md para la guía completa.
@@ -35,6 +49,31 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["usesCleartextTraffic"] = "false"
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("development") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            buildConfigField("String", "API_BASE_URL", developmentApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "true")
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
+        create("staging") {
+            dimension = "environment"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+            buildConfigField("String", "API_BASE_URL", stagingApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
+        }
+        create("production") {
+            dimension = "environment"
+            buildConfigField("String", "API_BASE_URL", productionApiBaseUrl.asBuildConfigValue())
+            buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
+        }
     }
 
     signingConfigs {
@@ -155,7 +194,10 @@ val checkReleaseSigningConfig = tasks.register("checkReleaseSigningConfig") {
     }
 }
 
-tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }
+tasks.matching {
+    (it.name.startsWith("assemble") || it.name.startsWith("bundle")) &&
+        it.name.endsWith("Release")
+}
     .configureEach { dependsOn(checkReleaseSigningConfig) }
 
 dependencies {

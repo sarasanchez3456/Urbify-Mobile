@@ -39,11 +39,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.location.haversineKm
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
@@ -83,6 +87,8 @@ fun ProveedorHomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val sessionState by sessionViewModel.state.collectAsState()
     val usuario = sessionState.usuario
+    val defaultNombre = stringResource(R.string.proveedor)
+    val defaultOficio = stringResource(R.string.proveedor)
 
     LaunchedEffect(usuario?.idUsuario) { viewModel.cargar(usuario?.idUsuario) }
 
@@ -101,8 +107,8 @@ fun ProveedorHomeScreen(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             HeaderProveedor(
-                nombre = usuario?.nombre?.trim().orEmpty().ifBlank { "Proveedor" }.replaceFirstChar { it.uppercase() },
-                oficio = usuario?.oficio?.trim().orEmpty().ifBlank { "Proveedor" },
+                nombre = usuario?.nombre?.trim().orEmpty().ifBlank { defaultNombre }.replaceFirstChar { it.uppercase() },
+                oficio = usuario?.oficio?.trim().orEmpty().ifBlank { defaultOficio },
                 onNotificaciones = onNotificaciones,
             )
             TarjetaDisponibilidad(
@@ -127,21 +133,21 @@ fun ProveedorHomeScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ResumenCard(
                     valor = uiState.nuevas.size.toString(),
-                    etiqueta = "Nuevas solicitudes",
+                    etiqueta = stringResource(R.string.nuevas_solicitudes),
                     icono = Icons.Default.NotificationsActive,
                     destacada = true,
                     modifier = Modifier.weight(1f),
                 )
                 ResumenCard(
                     valor = uiState.activas.size.toString(),
-                    etiqueta = "Activos",
+                    etiqueta = stringResource(R.string.activos),
                     icono = Icons.Default.WorkOutline,
                     destacada = false,
                     modifier = Modifier.weight(1f),
                 )
                 ResumenCard(
                     valor = if (uiState.totalCalificaciones > 0) "%.1f".format(uiState.calificacion) else "—",
-                    etiqueta = "Calificación",
+                    etiqueta = stringResource(R.string.calificacion),
                     icono = Icons.Default.Star,
                     destacada = false,
                     iconTint = Estrella,
@@ -151,9 +157,9 @@ fun ProveedorHomeScreen(
 
             // ---- Solicitudes nuevas ----
             SeccionTitulo(
-                texto = "Solicitudes nuevas",
+                texto = stringResource(R.string.solicitudes_nuevas),
                 icono = Icons.AutoMirrored.Filled.Assignment,
-                verTodoTexto = "Ver todas",
+                verTodoTexto = stringResource(R.string.ver_todas),
                 onVerTodo = onVerTrabajos,
             )
             if (uiState.nuevas.isEmpty()) {
@@ -175,9 +181,9 @@ fun ProveedorHomeScreen(
 
             // ---- Trabajos activos ----
             SeccionTitulo(
-                texto = "Trabajos activos",
+                texto = stringResource(R.string.trabajos_activos),
                 icono = Icons.Default.Schedule,
-                verTodoTexto = "Ver todos",
+                verTodoTexto = stringResource(R.string.ver_todos),
                 onVerTodo = onVerTrabajos,
             )
             if (uiState.activas.isEmpty()) {
@@ -251,7 +257,7 @@ private fun HeaderProveedor(nombre: String, oficio: String, onNotificaciones: ()
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Hola,", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+                        Text(stringResource(R.string.hola), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
                         Text(
                             text = "$nombre",
                             style = MaterialTheme.typography.titleLarge,
@@ -270,12 +276,12 @@ private fun HeaderProveedor(nombre: String, oficio: String, onNotificaciones: ()
                         .clickable(onClick = onNotificaciones),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                text = "Tu trabajo hace la ciudad más bonita",
+                text = stringResource(R.string.tu_trabajo_ciudad),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.85f),
             )
@@ -308,13 +314,13 @@ private fun TarjetaDisponibilidad(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "Disponible para trabajar",
+                    text = stringResource(R.string.disponible_trabajar),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = TextoPrincipal,
                 )
                 Text(
-                    text = "Los clientes pueden enviarte solicitudes",
+                    text = stringResource(R.string.clientes_pueden_enviar),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextoTenue,
                 )
@@ -406,8 +412,8 @@ private fun EmptyRequestsCard() {
         icono = Icons.Default.Search,
         iconoFondo = AzulSuave,
         iconoTint = AzulPrimario,
-        titulo = "No tienes solicitudes nuevas.",
-        subtitulo = "Cuando los clientes te envíen una solicitud, la verás aquí.",
+        titulo = stringResource(R.string.no_tienes_solicitudes_nuevas),
+        subtitulo = stringResource(R.string.cuando_clientes_envien),
     )
 }
 
@@ -417,8 +423,8 @@ private fun ActiveJobsCard() {
         icono = Icons.Default.Yard,
         iconoFondo = VerdeDisponible.copy(alpha = 0.12f),
         iconoTint = VerdeDisponible,
-        titulo = "Aún no tienes trabajos activos.",
-        subtitulo = "Cuando aceptes una solicitud, podrás ver el progreso aquí.",
+        titulo = stringResource(R.string.aun_no_trabajos_activos),
+        subtitulo = stringResource(R.string.cuando_aceptes_solicitud),
     )
 }
 
@@ -473,7 +479,7 @@ private fun ManageServicesButton(onClick: () -> Unit) {
     ) {
         Icon(Icons.Default.MiscellaneousServices, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
-        Text("Gestionar mis servicios", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(stringResource(R.string.gestionar_mis_servicios), fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(Modifier.width(6.dp))
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
     }
@@ -503,7 +509,7 @@ private fun SolicitudNuevaCard(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = nombreCompleto(solicitud.nombreCliente, solicitud.apellidoCliente) ?: "Cliente",
+                        text = nombreCompleto(solicitud.nombreCliente, solicitud.apellidoCliente) ?: stringResource(R.string.cliente),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = TextoPrincipal,
@@ -533,7 +539,7 @@ private fun SolicitudNuevaCard(
                     contentPadding = PaddingValues(vertical = 10.dp),
                 ) {
                     if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
-                    else Text("Aceptar")
+                    else Text(stringResource(R.string.aceptar))
                 }
                 OutlinedButton(
                     onClick = onRechazar,
@@ -542,7 +548,7 @@ private fun SolicitudNuevaCard(
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(vertical = 10.dp),
                 ) {
-                    Text("Rechazar", color = TextoPrincipal)
+                    Text(stringResource(R.string.rechazar), color = TextoPrincipal)
                 }
             }
         }
@@ -568,7 +574,7 @@ private fun TrabajoActivoCard(
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = nombreCompleto(solicitud.nombreCliente, solicitud.apellidoCliente) ?: "Cliente",
+                    text = nombreCompleto(solicitud.nombreCliente, solicitud.apellidoCliente) ?: stringResource(R.string.cliente),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = TextoPrincipal,
@@ -595,8 +601,8 @@ private fun TrabajoActivoCard(
 @Composable
 private fun EstadoTrabajoChip(estado: String?) {
     val (texto, color) = when (estado) {
-        EstadoSolicitud.EN_PROCESO -> "En curso" to AzulPrimario
-        EstadoSolicitud.ACEPTADA -> "Agendado" to TextoTenue
+        EstadoSolicitud.EN_PROCESO -> stringResource(R.string.en_curso) to AzulPrimario
+        EstadoSolicitud.ACEPTADA -> stringResource(R.string.agendado) to TextoTenue
         else -> (estado ?: "—") to TextoTenue
     }
     Box(
