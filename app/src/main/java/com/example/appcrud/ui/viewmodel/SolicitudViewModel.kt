@@ -3,6 +3,7 @@ package com.example.appcrud.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.network.NetworkResult
 import com.example.appcrud.data.repository.SolicitudRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,21 +56,16 @@ class SolicitudViewModel @JvmOverloads constructor(
                     detalleNoEncontrado = false,
                 )
             }
-            try {
-                val solicitud = repository.getSolicitud(idSolicitud, esProveedor)
-                _uiState.update {
+            when (val result = repository.getSolicitudResult(idSolicitud, esProveedor)) {
+                is NetworkResult.Success -> _uiState.update {
                     it.copy(
-                        detalle = solicitud,
+                        detalle = result.data,
                         detalleIsLoading = false,
-                        detalleNoEncontrado = solicitud == null,
+                        detalleNoEncontrado = result.data == null,
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        detalleIsLoading = false,
-                        detalleError = e.message ?: "Error al cargar la solicitud",
-                    )
+                is NetworkResult.Failure -> _uiState.update {
+                    it.copy(detalleIsLoading = false, detalleError = result.error.message)
                 }
             }
         }

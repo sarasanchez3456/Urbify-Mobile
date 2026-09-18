@@ -2,135 +2,126 @@ package com.example.appcrud.data.session
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-private val Context.dataStore by preferencesDataStore(name = "urbify_session")
-
-/** Estado de la sesión: [Loading] hasta la primera lectura de DataStore, luego [Ready]. */
 sealed interface TokenState {
     data object Loading : TokenState
     data class Ready(val token: String?) : TokenState
 }
 
 /**
- * Fuente única de verdad del JWT de sesión. Persiste el token con DataStore y
- * lo centraliza en [state], un [StateFlow] que arranca en [TokenState.Loading]
- * y pasa a [TokenState.Ready] recién cuando se completó la primera lectura
- * persistida — así cualquier consumidor puede distinguir "todavía no sabemos"
- * de "sabemos que no hay token".
- *
- * [getToken] existe para el interceptor de OkHttp, que debe responder de
- * forma síncrona: si todavía no terminó la primera lectura, bloquea (con
- * `runBlocking`) hasta que [state] emita [TokenState.Ready] en vez de asumir
- * `null` y disparar la request sin Authorization. Esto es seguro porque los
- * interceptors de OkHttp corren en un hilo de background del dispatcher de
- * OkHttp, nunca en el hilo principal.
+ * Fuente única del JWT. En la app se persiste cifrado por Android Keystore; el
+ * DataStore sólo se mantiene como adaptador interno para los tests JVM.
  */
 object TokenManager {
-    private val TOKEN_KEY = stringPreferencesKey("jwt_token")
+    private const val PREFERENCES_FILE = "urbify_secure_session"
+    private const val TOKEN_KEY = "jwt_token"
+    private val legacyTokenKey = stringPreferencesKey(TOKEN_KEY)
 
     private val _state = MutableStateFlow<TokenState>(TokenState.Loading)
     val state: StateFlow<TokenState> = _state.asStateFlow()
 
-    private var dataStore: DataStore<Preferences>? = null
+    private var encryptedPreferences: android.content.SharedPreferences? = null
+    private var testDataStore: DataStore<Preferences>? = null
     private var collectJob: Job? = null
-
-    // Incrementada en cada init()/shutdown(). job.cancel() es asíncrono: no
-    // garantiza que un collector viejo deje de emitir de inmediato. Sin esta
-    // guarda, un collector recién cancelado podía ganarle la carrera a un
-    // init() nuevo y pisar _state con un valor obsoleto (visto como
-    // flakiness real en tests que llaman init()/shutdown() repetidas veces).
     private var currentGeneration = 0L
 
+    @Synchronized
     fun init(context: Context) {
-        init(context.applicationContext.dataStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
+        collectJob?.cancel()
+        testDataStore = null
+        currentGeneration++
+        val appContext = context.applicationContext
+        val masterKey = MasterKey.Builder(appContext)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        encryptedPreferences = EncryptedSharedPreferences.create(
+            appContext,
+            PREFERENCES_FILE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+        _state.value = TokenState.Ready(encryptedPreferences?.getString(TOKEN_KEY, null))
     }
 
-    /**
-     * Idempotente y re-entrante: si ya había una recolección en curso (por
-     * ejemplo, un segundo `init()` por recreación del proceso en tests) la
-     * cancela antes de arrancar una nueva, para que nunca queden collectors
-     * duplicados corriendo sin control.
-     */
+    /** Adaptador de pruebas: nunca se usa para persistir sesiones reales. */
     @Synchronized
     internal fun init(dataStore: DataStore<Preferences>, scope: CoroutineScope) {
         collectJob?.cancel()
+        encryptedPreferences = null
+        testDataStore = dataStore
         currentGeneration++
-        val myGeneration = currentGeneration
-        this.dataStore = dataStore
+        val generation = currentGeneration
         _state.value = TokenState.Loading
         collectJob = scope.launch {
-            dataStore.data
-                .catch { e ->
-                    if (e is IOException) emit(emptyPreferences()) else throw e
-                }
-                .map { it[TOKEN_KEY] }
-                .collect { token ->
-                    if (myGeneration == currentGeneration) {
-                        _state.value = TokenState.Ready(token)
-                    }
-                }
+            dataStore.data.map { it[legacyTokenKey] }.collect { token ->
+                if (generation == currentGeneration) _state.value = TokenState.Ready(token)
+            }
         }
     }
 
-    /** Suspende hasta que se resuelva la primera lectura persistida. */
     suspend fun awaitReady(): String? =
         (state.first { it is TokenState.Ready } as TokenState.Ready).token
 
-    fun getToken(): String? {
-        val current = _state.value
-        if (current is TokenState.Ready) return current.token
-        return runBlocking { awaitReady() }
+    fun getToken(): String? = when (val current = _state.value) {
+        is TokenState.Ready -> current.token
+        TokenState.Loading -> runBlocking { awaitReady() }
     }
 
-    suspend fun saveToken(context: Context, token: String) =
-        saveTokenTo(requireDataStore(context), token)
-
-    suspend fun clearToken(context: Context) =
-        clearTokenFrom(requireDataStore(context))
-
-    // saveTokenTo/clearTokenFrom (en vez de overloads de saveToken/clearToken
-    // que reciban un Context) porque un overload ambiguaba la inferencia de
-    // tipos de Kotlin en los call sites que usan AndroidViewModel.getApplication()
-    // (tipo genérico sin argumento de tipo explícito). Solo para tests: la app
-    // siempre pasa por saveToken(context, ...) / clearToken(context).
-    internal suspend fun saveTokenTo(dataStore: DataStore<Preferences>, token: String) {
+    suspend fun saveToken(context: Context, token: String) {
+        ensureInitialized(context)
+        encryptedPreferences?.edit()?.putString(TOKEN_KEY, token)?.commit()
         _state.value = TokenState.Ready(token)
-        dataStore.edit { it[TOKEN_KEY] = token }
+    }
+
+    suspend fun clearToken(context: Context) {
+        ensureInitialized(context)
+        clearTokenSync()
+    }
+
+    /** Usado por el interceptor ante 401; no espera una coroutine de UI. */
+    fun clearTokenSync() {
+        encryptedPreferences?.edit()?.remove(TOKEN_KEY)?.commit()
+        _state.value = TokenState.Ready(null)
+    }
+
+    internal suspend fun saveTokenTo(dataStore: DataStore<Preferences>, token: String) {
+        testDataStore = dataStore
+        _state.value = TokenState.Ready(token)
+        dataStore.edit { it[legacyTokenKey] = token }
     }
 
     internal suspend fun clearTokenFrom(dataStore: DataStore<Preferences>) {
+        testDataStore = dataStore
         _state.value = TokenState.Ready(null)
-        dataStore.edit { it.remove(TOKEN_KEY) }
+        dataStore.edit { it.remove(legacyTokenKey) }
     }
 
-    private fun requireDataStore(context: Context): DataStore<Preferences> =
-        dataStore ?: context.applicationContext.dataStore.also { dataStore = it }
+    private fun ensureInitialized(context: Context) {
+        if (encryptedPreferences == null && testDataStore == null) init(context)
+    }
 
-    /** Solo para tests: cancela la recolección activa y resetea el estado. */
     @Synchronized
     internal fun shutdown() {
         collectJob?.cancel()
         collectJob = null
-        dataStore = null
-        currentGeneration++ // invalida cualquier emisión del collector cancelado que aún esté en vuelo
+        encryptedPreferences = null
+        testDataStore = null
+        currentGeneration++
         _state.value = TokenState.Loading
     }
 }

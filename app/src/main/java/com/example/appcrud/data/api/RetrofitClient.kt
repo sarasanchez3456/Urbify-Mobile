@@ -2,6 +2,7 @@ package com.example.appcrud.data.api
 
 import com.example.appcrud.BuildConfig
 import com.example.appcrud.data.session.TokenManager
+import com.example.appcrud.data.session.SessionEvents
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -24,7 +25,14 @@ object RetrofitClient {
         } else {
             original
         }
-        chain.proceed(request)
+        val response = chain.proceed(request)
+        // No invalida la sesión por un login fallido; sí por cualquier endpoint
+        // autenticado que el servidor rechace con 401.
+        if (response.code == 401 && !original.url.encodedPath.startsWith("/api/auth/")) {
+            TokenManager.clearTokenSync()
+            SessionEvents.notifyExpired()
+        }
+        response
     }
 
     private val logging = HttpLoggingInterceptor().apply {

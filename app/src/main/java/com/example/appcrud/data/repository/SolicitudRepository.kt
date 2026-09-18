@@ -4,6 +4,8 @@ import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.network.NetworkResult
+import com.example.appcrud.data.network.safeNetworkCall
 
 class SolicitudRepository(private val api: ApiService = RetrofitClient.apiService) {
 
@@ -24,6 +26,9 @@ class SolicitudRepository(private val api: ApiService = RetrofitClient.apiServic
         val solicitudes = if (esProveedor) getSolicitudesProveedor() else getSolicitudesCliente()
         return solicitudes.firstOrNull { it.idSolicitud == idSolicitud }
     }
+
+    suspend fun getSolicitudResult(idSolicitud: Int, esProveedor: Boolean): NetworkResult<Solicitud?> =
+        safeNetworkCall { getSolicitud(idSolicitud, esProveedor) }
 
     suspend fun cambiarEstado(id: Int, estado: String) {
         api.cambiarEstadoSolicitud(id, EstadoUpdateRequest(estado))

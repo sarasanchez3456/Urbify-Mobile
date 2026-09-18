@@ -20,8 +20,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.appcrud.data.model.Rol
+import com.example.appcrud.data.session.SessionEvents
 import com.example.appcrud.ui.screens.*
 import com.example.appcrud.ui.viewmodel.SessionViewModel
+import kotlinx.coroutines.flow.collect
 
 object Routes {
     const val LOGIN = "login"
@@ -83,6 +85,15 @@ fun AppNavGraph(
     var serviciosRefresh by remember { mutableIntStateOf(0) }
     var solicitudesRefresh by remember { mutableIntStateOf(0) }
     var calificacionesRefresh by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        SessionEvents.expired.collect {
+            sessionViewModel.logout()
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route

@@ -246,6 +246,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.coil.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
     implementation(libs.play.services.location)
     implementation("org.osmdroid:osmdroid-android:6.1.18")
     testImplementation(libs.junit)

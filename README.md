@@ -386,7 +386,7 @@ Todos los datos de la plataforma se almacenan en la base de datos del backend, *
 | Calificaciones | Base de datos del backend |
 | Categorías | Base de datos del backend |
 
-La app **nunca guarda** esta información localmente. Cada vez que abres una pantalla, los datos se piden al servidor via la API REST (`http://10.0.2.2:4000/api/`). Si el backend no está corriendo, la app no muestra nada.
+La app consulta los datos al servidor mediante la URL de la variante activa (`BuildConfig.API_BASE_URL`). En desarrollo, el valor predeterminado es `http://10.0.2.2:4000/api/`; staging y producción requieren HTTPS. Si el backend no está disponible, la app muestra un estado de error y permite reintentar.
 
 ### En el dispositivo (DataStore)
 
@@ -394,7 +394,7 @@ La app solo guarda dos preferencias locales usando **Jetpack DataStore**:
 
 | Dato | Archivo DataStore | Clave |
 |---|---|---|
-| Token JWT (sesión) | `urbify_session` | `jwt_token` |
+| Token JWT (sesión) | `EncryptedSharedPreferences` protegido por Android Keystore | `jwt_token` |
 | Tema claro/oscuro | `urbify_prefs` | `dark_theme` |
 
 El token JWT permite que la app recuerde tu sesión aunque la cierres. Al hacer "Cerrar sesión" el token se borra del DataStore.
@@ -428,7 +428,7 @@ Los backends Node.js más comunes usan **MongoDB**, **PostgreSQL** o **MySQL**.
 
 Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez que el usuario accede a **Proveedores Cercanos**. Internet es necesario para toda la app (API + tiles del mapa).
 
-> **Nota**: la app declara `android:usesCleartextTraffic="true"` en el `AndroidManifest.xml` para permitir conexiones HTTP (no HTTPS) al backend en `http://10.0.2.2:4000`. Esto es necesario en desarrollo; en producción se recomienda HTTPS.
+> **Nota**: el manifest obtiene `usesCleartextTraffic` de cada flavor. Sólo `development` permite HTTP para el backend local; `staging` y `production` obligan HTTPS.
 
 ---
 
