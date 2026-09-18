@@ -13,9 +13,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
@@ -31,7 +33,10 @@ fun DetalleSolicitudScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val defaultError = stringResource(R.string.error_prefijo, "")
 
+    // La ruta sólo transporta el identificador: al recrear la actividad se vuelve
+    // a obtener la solicitud desde el repositorio mediante el ViewModel.
     LaunchedEffect(solicitudId, esProveedor) {
         if (solicitudId > 0) viewModel.loadDetalle(solicitudId, esProveedor)
     }
@@ -43,7 +48,7 @@ fun DetalleSolicitudScreen(
     }
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
             viewModel.clearMessages()
         }
     }
@@ -52,10 +57,13 @@ fun DetalleSolicitudScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Detalle de solicitud") },
+                title = { Text(stringResource(R.string.detalle_solicitud)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.volver),
+                        )
                     }
                 },
             )
@@ -64,7 +72,7 @@ fun DetalleSolicitudScreen(
         when {
             solicitudId <= 0 -> DetalleAviso(
                 modifier = Modifier.padding(padding),
-                mensaje = "La solicitud indicada no es válida.",
+                mensaje = stringResource(R.string.solicitud_invalida),
                 onBack = onBack,
             )
             uiState.detalleIsLoading -> Box(
@@ -73,13 +81,13 @@ fun DetalleSolicitudScreen(
             ) { CircularProgressIndicator() }
             uiState.detalleError != null -> DetalleAviso(
                 modifier = Modifier.padding(padding),
-                mensaje = uiState.detalleError ?: "No se pudo cargar la solicitud.",
+                mensaje = uiState.detalleError ?: stringResource(R.string.no_se_pudo_cargar_solicitud),
                 onRetry = { viewModel.loadDetalle(solicitudId, esProveedor) },
                 onBack = onBack,
             )
             uiState.detalleNoEncontrado || uiState.detalle == null -> DetalleAviso(
                 modifier = Modifier.padding(padding),
-                mensaje = "La solicitud ya no existe o no tienes permiso para verla.",
+                mensaje = stringResource(R.string.solicitud_no_encontrada),
                 onBack = onBack,
             )
             else -> SolicitudDetalleContenido(
@@ -108,8 +116,8 @@ private fun DetalleAviso(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(mensaje, style = MaterialTheme.typography.bodyLarge)
-            if (onRetry != null) Button(onClick = onRetry) { Text("Reintentar") }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
+            if (onRetry != null) Button(onClick = onRetry) { Text(stringResource(R.string.reintentar)) }
+            OutlinedButton(onClick = onBack) { Text(stringResource(R.string.volver)) }
         }
     }
 }
@@ -130,8 +138,8 @@ private fun SolicitudDetalleContenido(
     if (confirmarCancelar) {
         AlertDialog(
             onDismissRequest = { confirmarCancelar = false },
-            title = { Text("Cancelar solicitud") },
-            text = { Text("¿Estás seguro de que quieres cancelar esta solicitud?") },
+            title = { Text(stringResource(R.string.cancelar_solicitud)) },
+            text = { Text(stringResource(R.string.estas_seguro_cancelar)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -139,9 +147,11 @@ private fun SolicitudDetalleContenido(
                         confirmarCancelar = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                ) { Text("Cancelar solicitud") }
+                ) { Text(stringResource(R.string.cancelar_solicitud)) }
             },
-            dismissButton = { TextButton(onClick = { confirmarCancelar = false }) { Text("Mantener") } },
+            dismissButton = {
+                TextButton(onClick = { confirmarCancelar = false }) { Text(stringResource(R.string.mantener)) }
+            },
         )
     }
 
@@ -162,7 +172,7 @@ private fun SolicitudDetalleContenido(
             verticalAlignment = Alignment.Top,
         ) {
             Text(
-                text = solicitud.tituloServicio ?: "Servicio",
+                text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.weight(1f),
@@ -180,11 +190,14 @@ private fun SolicitudDetalleContenido(
         }
 
         Spacer(Modifier.height(24.dp))
-        if (esProveedor) solicitud.nombreCliente?.let { CampoDetalle(Icons.Default.Person, "Cliente", it) }
-        else solicitud.nombreProveedor?.let { CampoDetalle(Icons.Default.Person, "Proveedor", it) }
-        solicitud.direccion?.let { CampoDetalle(Icons.Default.LocationOn, "Dirección", it) }
-        solicitud.mensaje?.let { CampoDetalle(Icons.AutoMirrored.Filled.Message, "Mensaje", it) }
-        solicitud.fechaSolicitud?.let { CampoDetalle(Icons.Default.CalendarToday, "Fecha", it) }
+        if (esProveedor) solicitud.nombreCliente?.let {
+            CampoDetalle(Icons.Default.Person, stringResource(R.string.cliente), it)
+        } else solicitud.nombreProveedor?.let {
+            CampoDetalle(Icons.Default.Person, stringResource(R.string.proveedor), it)
+        }
+        solicitud.direccion?.let { CampoDetalle(Icons.Default.LocationOn, stringResource(R.string.direccion), it) }
+        solicitud.mensaje?.let { CampoDetalle(Icons.AutoMirrored.Filled.Message, stringResource(R.string.mensaje), it) }
+        solicitud.fechaSolicitud?.let { CampoDetalle(Icons.Default.CalendarToday, stringResource(R.string.fecha), it) }
 
         Spacer(Modifier.height(28.dp))
         if (procesando) {
@@ -196,20 +209,20 @@ private fun SolicitudDetalleContenido(
                         onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.CANCELADA) } },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    ) { Text("Rechazar") }
+                    ) { Text(stringResource(R.string.rechazar)) }
                     Button(
                         onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
                         modifier = Modifier.weight(1f),
-                    ) { Text("Aceptar") }
+                    ) { Text(stringResource(R.string.aceptar)) }
                 }
                 EstadoSolicitud.ACEPTADA -> Button(
                     onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Iniciar trabajo") }
+                ) { Text(stringResource(R.string.iniciar_trabajo)) }
                 EstadoSolicitud.EN_PROCESO -> Button(
                     onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.COMPLETADA) } },
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Marcar como completado") }
+                ) { Text(stringResource(R.string.marcar_completado)) }
             }
         } else {
             if (solicitud.estado == EstadoSolicitud.COMPLETADA && solicitudId != null && proveedorId != null) {
@@ -217,9 +230,9 @@ private fun SolicitudDetalleContenido(
                     onClick = { onCalificar(solicitudId, proveedorId) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Calificar servicio")
+                    Text(stringResource(R.string.calificar_servicio))
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -229,9 +242,9 @@ private fun SolicitudDetalleContenido(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Cancelar solicitud")
+                    Text(stringResource(R.string.cancelar_solicitud))
                 }
             }
         }

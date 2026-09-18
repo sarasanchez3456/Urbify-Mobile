@@ -18,9 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.appcrud.R
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Usuario
 import com.example.appcrud.ui.theme.UrbifyPrimary
@@ -39,10 +43,12 @@ fun PerfilScreen(
     var modoEdicion by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val defaultPerfilActualizado = stringResource(R.string.perfil_actualizado)
+    val defaultError = stringResource(R.string.error_prefijo, "")
 
     LaunchedEffect(sessionState.updateSuccess) {
         if (sessionState.updateSuccess) {
-            snackbarHostState.showSnackbar("Perfil actualizado correctamente")
+            snackbarHostState.showSnackbar(defaultPerfilActualizado)
             sessionViewModel.clearUpdateSuccess()
             modoEdicion = false
         }
@@ -50,7 +56,7 @@ fun PerfilScreen(
 
     LaunchedEffect(sessionState.error) {
         sessionState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
         }
     }
 
@@ -58,16 +64,16 @@ fun PerfilScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Mi perfil") },
+                title = { Text(stringResource(R.string.mi_perfil)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 },
                 actions = {
                     if (!modoEdicion) {
                         IconButton(onClick = { modoEdicion = true }) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar")
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(R.string.editar))
                         }
                     }
                 }
@@ -84,7 +90,7 @@ fun PerfilScreen(
                 if (sessionState.isLoading) {
                     CircularProgressIndicator()
                 } else {
-                    Text("No hay sesión activa", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.no_hay_sesion_activa), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else if (modoEdicion) {
@@ -149,9 +155,9 @@ private fun VistaPerfil(
         )
 
         val rolLabel = when (usuario.rol) {
-            Rol.PROVEEDOR -> "Proveedor"
-            Rol.ADMIN -> "Administrador"
-            else -> "Cliente"
+            Rol.PROVEEDOR -> stringResource(R.string.proveedor_rol)
+            Rol.ADMIN -> stringResource(R.string.administrador)
+            else -> stringResource(R.string.cliente_rol)
         }
         Surface(
             shape = RoundedCornerShape(20.dp),
@@ -168,11 +174,11 @@ private fun VistaPerfil(
 
         Spacer(Modifier.height(28.dp))
 
-        CampoInfo("Correo electrónico", usuario.correo)
-        usuario.telefono?.let { CampoInfo("Teléfono", it) }
-        usuario.direccion?.let { CampoInfo("Dirección", it) }
+        CampoInfo(stringResource(R.string.correo_electronico), usuario.correo)
+        usuario.telefono?.let { CampoInfo(stringResource(R.string.telefono), it) }
+        usuario.direccion?.let { CampoInfo(stringResource(R.string.direccion), it) }
         if (usuario.rol == Rol.PROVEEDOR) {
-            usuario.oficio?.let { CampoInfo("Oficio", it) }
+            usuario.oficio?.let { CampoInfo(stringResource(R.string.oficio), it) }
         }
 
         Spacer(Modifier.height(32.dp))
@@ -188,7 +194,7 @@ private fun VistaPerfil(
         ) {
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Cerrar sesión")
+            Text(stringResource(R.string.cerrar_sesion))
         }
     }
 }
@@ -241,14 +247,14 @@ private fun FormularioPerfil(
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
-                label = { Text("Nombre") },
+                label = { Text(stringResource(R.string.nombre)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = apellido,
                 onValueChange = { apellido = it },
-                label = { Text("Apellido") },
+                label = { Text(stringResource(R.string.apellido)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -257,7 +263,7 @@ private fun FormularioPerfil(
         OutlinedTextField(
             value = telefono,
             onValueChange = { telefono = it },
-            label = { Text("Teléfono") },
+            label = { Text(stringResource(R.string.telefono)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
@@ -266,7 +272,7 @@ private fun FormularioPerfil(
         OutlinedTextField(
             value = direccion,
             onValueChange = { direccion = it },
-            label = { Text("Dirección") },
+            label = { Text(stringResource(R.string.direccion)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -275,7 +281,7 @@ private fun FormularioPerfil(
             OutlinedTextField(
                 value = oficio,
                 onValueChange = { oficio = it },
-                label = { Text("Oficio") },
+                label = { Text(stringResource(R.string.oficio)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -305,7 +311,7 @@ private fun FormularioPerfil(
                     color = Color.White
                 )
             } else {
-                Text("Guardar cambios")
+                Text(stringResource(R.string.guardar_cambios))
             }
         }
 
@@ -314,7 +320,7 @@ private fun FormularioPerfil(
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Cancelar")
+            Text(stringResource(R.string.cancelar))
         }
     }
 }

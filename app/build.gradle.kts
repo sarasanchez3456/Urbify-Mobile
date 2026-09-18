@@ -7,12 +7,20 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-/**
- * URLs configurables mediante -P<ENTORNO>_API_BASE_URL, gradle.properties o
- * local.properties. Retrofit exige que la URL base termine en '/'.
- */
+// `local.properties` no se versiona y permite apuntar development a una IP LAN
+// sin editar fuentes. Las propiedades -P tienen prioridad para CI/CD.
+val localProperties = Properties().apply {
+    val propsFile = rootProject.file("local.properties")
+    if (propsFile.exists()) {
+        FileInputStream(propsFile).use { load(it) }
+    }
+}
+
+/** URLs configurables mediante -P<ENTORNO>_API_BASE_URL, gradle.properties o local.properties. */
 fun apiBaseUrl(propertyName: String, defaultValue: String, requireHttps: Boolean = false): String {
-    val value = providers.gradleProperty(propertyName).orElse(defaultValue).get()
+    val value = providers.gradleProperty(propertyName).orNull
+        ?: localProperties.getProperty(propertyName)?.takeIf { it.isNotBlank() }
+        ?: defaultValue
     require(value.endsWith('/')) { "$propertyName debe terminar en /" }
     if (requireHttps) {
         require(value.startsWith("https://")) { "$propertyName debe usar HTTPS" }

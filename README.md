@@ -10,17 +10,17 @@ Aplicación Android para la plataforma **Urbify** — marketplace de servicios u
 
 | Herramienta | Versión mínima | Descarga |
 |---|---|---|
-| Android Studio | Hedgehog (2023.1.1) o superior | [developer.android.com/studio](https://developer.android.com/studio) |
-| JDK | 11 | Incluido en Android Studio |
-| Android SDK | API 24 (Android 7.0) | Se instala desde Android Studio |
+| Android Studio | Quail 4 (2026.1.4) o superior | [developer.android.com/studio](https://developer.android.com/studio) |
+| JDK | 17 (incluido en Android Studio) | Incluido en Android Studio |
+| Android SDK | API 37 (compileSdk / targetSdk), minSdk 24 | Se instala desde Android Studio |
 | Git | Cualquiera reciente | [git-scm.com](https://git-scm.com) |
 
 ### Android Studio — SDK Manager
 
 Al abrir el proyecto por primera vez, Android Studio pedirá instalar el SDK. Asegúrate de tener:
 
-- `Android SDK Platform 37` (o 24+)
-- `Android SDK Build-Tools`
+- `Android SDK Platform 37`
+- `Android SDK Build-Tools 36.0.0`
 - `Google Play Services` (necesario para GPS)
 
 Ve a `File → Settings → Appearance & Behavior → System Settings → Android SDK` y activa lo anterior.
@@ -45,18 +45,20 @@ cd Urbify-Mobile
 
 No hay que instalar nada manualmente. Gradle descarga todo al sincronizar:
 
-| Librería | Uso |
-|---|---|
-| Jetpack Compose BOM | UI declarativa |
-| Navigation Compose | Navegación entre pantallas |
-| Material3 | Componentes visuales |
-| Retrofit 2 + OkHttp | Llamadas a la API REST |
-| Gson | Serialización JSON |
-| DataStore Preferences | Persistencia local (JWT + tema) |
-| Coil | Carga de imágenes |
-| OSMDroid 6.1.18 | Mapa de proveedores cercanos (OpenStreetMap, sin API key) |
-| Google Play Services Location | GPS para ubicación del usuario |
-| ViewModel + StateFlow | Manejo de estado |
+| Librería | Versión | Uso |
+|---|---|---|
+| Jetpack Compose BOM | 2026.02.01 | UI declarativa |
+| Navigation Compose | 2.9.8 | Navegación entre pantallas |
+| Material3 | (via BOM) | Componentes visuales |
+| Material Icons Extended | (via BOM) | Íconos extendidos |
+| Retrofit + Gson Converter | 3.0.0 | Llamadas a la API REST (group: `com.squareup.retrofit2`) |
+| OkHttp + Logging Interceptor | 4.12.0 | HTTP client y logging |
+| Kotlinx Serialization JSON | 1.8.0 | Serialización (disponible; la app usa Gson via Retrofit) |
+| DataStore Preferences | 1.1.1 | Persistencia local (JWT + tema) |
+| Coil | 2.7.0 | Carga de imágenes |
+| OSMDroid | 6.1.18 | Mapa de proveedores cercanos (OpenStreetMap, sin API key) |
+| Google Play Services Location | 21.3.0 | GPS para ubicación del usuario |
+| ViewModel + StateFlow | 2.11.0 | Manejo de estado |
 
 ---
 
@@ -90,6 +92,10 @@ Los nombres de campo del JSON (`id`, `categoria_id`, `tarifa`, …) deben coinci
 
 Al levantar el backend por primera vez la base de datos queda **vacía**: el `schema.sql` solo siembra las **8 categorías**, sin usuarios ni servicios. Cada quien registra sus propios datos. Lo que tengas localmente vive en el volumen Docker `urbify_mysql_data` del backend, **nunca en el repositorio** — no se comparte al clonar.
 
+---
+
+## Configuración de red
+
 ### Entornos y URL base de la API
 
 La URL ya no está escrita en Kotlin. Cada variante genera `BuildConfig.API_BASE_URL` desde una propiedad de Gradle. Todas las URLs deben terminar en `/`.
@@ -116,16 +122,11 @@ DEVELOPMENT_API_BASE_URL=http://192.168.X.X:4000/api/
 
 Obtén la IP con `ipconfig` en Windows o `ip addr` en Linux/macOS. Después sincroniza Gradle y vuelve a compilar `developmentDebug`. No se modifica ningún archivo fuente.
 
-Como alternativa para un emulador con redirección ADB, configura `http://127.0.0.1:4000/api/` en la misma propiedad tras ejecutar `adb reverse tcp:4000 tcp:4000`.
+Como alternativa para un emulador con redirección ADB, ejecuta `adb reverse tcp:4000 tcp:4000` y compila con `-PDEVELOPMENT_API_BASE_URL=http://127.0.0.1:4000/api/`.
 
 #### Staging y producción
 
-Configura las URLs HTTPS reales localmente o en el sistema de CI/CD:
-
-```properties
-STAGING_API_BASE_URL=https://staging-api.tudominio.com/api/
-PRODUCTION_API_BASE_URL=https://api.tudominio.com/api/
-```
+Configura las URLs HTTPS reales en `gradle.properties` local o en el sistema de CI/CD:
 
 Puedes pasarlas también por línea de comandos, sin persistirlas en el repositorio:
 
@@ -135,12 +136,21 @@ Puedes pasarlas también por línea de comandos, sin persistirlas en el reposito
 ```
 
 Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="false"`. Por ello no aceptan conexiones HTTP, incluso si se configura una URL HTTP por error.
+### Otros problemas comunes
+
+| Síntoma | Causa probable | Solución |
+|---|---|---|
+| `Unable to resolve host` | Backend apagado o URL incorrecta | Verifica que `docker compose up -d` esté corriendo y la propiedad `*_API_BASE_URL` de la variante elegida |
+| Campos vacíos en la app | Versión desactualizada del backend o la app | Actualiza ambos repos y reinicia el backend |
+| `SecurityException` al ver mapa | Permiso de ubicación no concedido | Otorga el permiso en Ajustes → Apps → Urbify → Permisos |
+| Gradle no sincroniza | Versión de JDK incorrecta | Verifica en `File → Project Structure → SDK Location` que el JDK sea 17 |
+| Pantalla en blanco al iniciar | Token JWT inválido o expirado | Cierra sesión vía perfil o borra datos de la app |
 
 ---
 
 ## Ejecutar la app
 
-1. Conecta un emulador o dispositivo físico con Android 7.0+
+1. Conecta un emulador o dispositivo físico con Android 7.0+ (API 24)
 2. Asegúrate de que el backend esté corriendo
 3. Presiona **Run ▶** en Android Studio o `Shift + F10`
 
@@ -155,15 +165,13 @@ Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="f
 - Pantalla de perfil con edición de datos y cierre de sesión
 
 ### Navegación por rol
-- **Cliente**: Home → Catálogo → Mis Solicitudes → Perfil
-- **Proveedor**: Home → Mis Servicios → Solicitudes Recibidas → Perfil
+- **Cliente**: Inicio → Catálogo → Solicitudes → Perfil
+- **Proveedor**: Inicio → Trabajos → Billetera → Perfil
 - Bottom bar se adapta automáticamente según el rol registrado
 
 ### Home
-- Dashboard con solicitudes activas y completadas
-- Buscador que navega al catálogo con el término escrito
-- Acceso rápido a categorías con filtro automático
-- Proveedores destacados
+- **Cliente** (`ClienteHomeScreen`): Dashboard con solicitudes activas y completadas, buscador que navega al catálogo con el término escrito, acceso rápido a categorías con filtro automático, proveedores destacados
+- **Proveedor** (`ProveedorHomeScreen`): Trabajos recientes, acceso rápido a servicios y solicitudes
 
 ### Catálogo y búsqueda
 - Lista de categorías clicables
@@ -185,10 +193,20 @@ Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="f
 
 ### Proveedores cercanos
 - Lista de proveedores ordenada por distancia (requiere permiso GPS)
-- **Vista de mapa interactivo** con OpenStreetMap (sin API key)
+- **Vista de mapa interactivo** con OpenStreetMap vía OSMDroid (sin API key)
 - Pin en la ubicación del usuario + marcadores por proveedor
 - Toggle Lista / Mapa en la misma pantalla
 - Filtro de radio: 2 km, 5 km, 10 km
+
+### Selección de dirección
+- Pantalla para buscar y seleccionar dirección en el mapa
+- Búsqueda por texto (geocodificación directa vía Nominatim)
+- Al mover el mapa se resuelve la dirección automáticamente (geocodificación inversa)
+- Selección de ubicación arrastrando el pin en el mapa
+
+### Billetera (Proveedor)
+- Resumen de ingresos por solicitudes completadas
+- Historial de transacciones con montos
 
 ### CRUD de servicios (Proveedor)
 - Listar, crear, editar y eliminar servicios propios
@@ -209,20 +227,32 @@ app/src/main/java/com/example/appcrud/
 ├── data/
 │   ├── api/
 │   │   ├── ApiService.kt               # Todos los endpoints Retrofit
+│   │   ├── NominatimApi.kt             # API de geocodificación (OpenStreetMap)
 │   │   └── RetrofitClient.kt           # OkHttp + interceptores (auth, logging)
 │   ├── location/
-│   │   └── LocationProvider.kt         # GPS con FusedLocationProviderClient
+│   │   ├── Distancia.kt                # Cálculo de distancia entre coordenadas
+│   │   ├── LocationProvider.kt         # GPS con FusedLocationProviderClient
+│   │   ├── MapTiles.kt                 # Configuración de tiles de OpenStreetMap
+│   │   └── ReverseGeocoder.kt          # Geocodificación inversa vía Nominatim
 │   ├── model/                          # Data classes de la API
 │   │   ├── Auth.kt                     # LoginRequest, RegistroRequest, AuthResponse
 │   │   ├── AuthError.kt                # Error de auth con bloqueo por intentos
-│   │   ├── Calificacion.kt
+│   │   ├── Calificacion.kt             # + CalificacionesProveedorResponse
 │   │   ├── Categoria.kt
-│   │   ├── ProveedorCercano.kt         # Incluye latitud/longitud para el mapa
+│   │   ├── MensajeResponse.kt          # Respuesta { mensaje } de endpoints de escritura
+│   │   ├── ProveedorCercano.kt         # + ServicioCercano (lat/lng para el mapa)
 │   │   ├── Servicio.kt
 │   │   ├── Solicitud.kt                # + EstadoSolicitud + EstadoUpdateRequest
 │   │   ├── Stats.kt
 │   │   └── Usuario.kt                  # + object Rol
 │   ├── repository/                     # Una clase por dominio, llaman a ApiService
+│   │   ├── AuthRepository.kt
+│   │   ├── CalificacionRepository.kt
+│   │   ├── CategoriaRepository.kt
+│   │   ├── ProveedorRepository.kt
+│   │   ├── ServicioRepository.kt
+│   │   ├── SolicitudRepository.kt
+│   │   └── StatsRepository.kt
 │   └── session/
 │       ├── TokenManager.kt             # JWT en DataStore + caché en memoria
 │       └── ThemeManager.kt             # Preferencia de tema en DataStore
@@ -236,7 +266,8 @@ app/src/main/java/com/example/appcrud/
 │   │   └── BottomNavigationBar.kt      # Bottom bar adaptable por rol
 │   ├── screens/
 │   │   ├── AuthScreen.kt               # Login + Registro (tabs)
-│   │   ├── HomeScreen.kt               # Dashboard principal
+│   │   ├── ClienteHomeScreen.kt        # Dashboard del cliente
+│   │   ├── ProveedorHomeScreen.kt      # Dashboard del proveedor
 │   │   ├── PerfilScreen.kt             # Ver/editar perfil + cerrar sesión
 │   │   ├── CatalogoScreen.kt           # Búsqueda y categorías
 │   │   ├── CreateSolicitudScreen.kt    # Nueva solicitud
@@ -246,10 +277,23 @@ app/src/main/java/com/example/appcrud/
 │   │   ├── CalificarScreen.kt          # Enviar calificación con estrellas
 │   │   ├── HistorialCalificacionesScreen.kt  # Ver/editar/eliminar calificaciones
 │   │   ├── ProveedoresCercanosScreen.kt      # Lista + mapa OSMDroid
+│   │   ├── ElegirDireccionScreen.kt    # Buscar y seleccionar dirección en mapa
+│   │   ├── BilleteraScreen.kt          # Resumen de ingresos (proveedor)
 │   │   ├── MisServiciosScreen.kt       # CRUD de servicios del proveedor
 │   │   ├── CreateEditServicioScreen.kt # Crear o editar servicio
 │   │   └── StatsScreen.kt             # Estadísticas globales
-│   ├── viewmodel/                      # Un ViewModel por pantalla
+│   ├── viewmodel/                      # Un ViewModel por dominio
+│   │   ├── AuthViewModel.kt
+│   │   ├── CalificacionViewModel.kt
+│   │   ├── CatalogoViewModel.kt
+│   │   ├── CreateEditServicioViewModel.kt
+│   │   ├── HomeViewModel.kt
+│   │   ├── MisServiciosViewModel.kt
+│   │   ├── ProveedorHomeViewModel.kt
+│   │   ├── ProveedoresCercanosViewModel.kt
+│   │   ├── SessionViewModel.kt
+│   │   ├── SolicitudViewModel.kt
+│   │   └── StatsViewModel.kt
 │   └── theme/
 │       ├── Color.kt                    # Paleta de marca Urbify (light + dark)
 │       ├── Theme.kt                    # UrbifyTheme + UrbifyPrimaryGradient
@@ -271,6 +315,14 @@ app/src/main/java/com/example/appcrud/
 | `GET` | `/api/auth/perfil` | Perfil del usuario autenticado |
 | `PUT` | `/api/auth/perfil` | Actualizar datos del perfil |
 
+### Categorías
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/categorias` | Lista de categorías |
+| `POST` | `/api/categorias` | Crear categoría (admin) |
+| `PUT` | `/api/categorias/:id` | Editar categoría (admin) |
+| `DELETE` | `/api/categorias/:id` | Eliminar categoría (admin) |
+
 ### Servicios
 | Método | Ruta | Descripción |
 |---|---|---|
@@ -278,6 +330,7 @@ app/src/main/java/com/example/appcrud/
 | `GET` | `/api/servicios/buscar?q=` | Búsqueda por texto |
 | `GET` | `/api/servicios/categoria/:id` | Filtrar por categoría |
 | `GET` | `/api/servicios/mios` | Servicios del proveedor autenticado |
+| `GET` | `/api/servicios/:id` | Detalle de un servicio |
 | `POST` | `/api/servicios` | Crear servicio |
 | `PUT` | `/api/servicios/:id` | Editar servicio |
 | `DELETE` | `/api/servicios/:id` | Eliminar servicio |
@@ -289,6 +342,7 @@ app/src/main/java/com/example/appcrud/
 | `GET` | `/api/solicitudes/cliente` | Solicitudes del cliente |
 | `GET` | `/api/solicitudes/proveedor` | Solicitudes recibidas |
 | `PUT` | `/api/solicitudes/:id/estado` | Cambiar estado |
+| `DELETE` | `/api/solicitudes/:id` | Eliminar solicitud |
 
 ### Calificaciones
 | Método | Ruta | Descripción |
@@ -301,7 +355,6 @@ app/src/main/java/com/example/appcrud/
 ### Otros
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/api/categorias` | Lista de categorías |
 | `GET` | `/api/proveedores/cercanos?lat=&lng=&radio=` | Proveedores con distancia |
 | `GET` | `/api/stats` | Estadísticas globales |
 
@@ -314,8 +367,8 @@ Authorization: Bearer <jwt_token>
 | Rol | Acceso |
 |---|---|
 | `cliente` | Busca servicios, crea solicitudes, califica proveedores |
-| `proveedor` | Gestiona servicios, atiende solicitudes |
-| `admin` | Acceso administrativo |
+| `proveedor` | Gestiona servicios, atiende solicitudes, ve billetera |
+| `admin` | Acceso administrativo (gestión de categorías) |
 
 ---
 
@@ -374,6 +427,8 @@ Los backends Node.js más comunes usan **MongoDB**, **PostgreSQL** o **MySQL**.
 ```
 
 Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez que el usuario accede a **Proveedores Cercanos**. Internet es necesario para toda la app (API + tiles del mapa).
+
+> **Nota**: la app declara `android:usesCleartextTraffic="true"` en el `AndroidManifest.xml` para permitir conexiones HTTP (no HTTPS) al backend en `http://10.0.2.2:4000`. Esto es necesario en desarrollo; en producción se recomienda HTTPS.
 
 ---
 
