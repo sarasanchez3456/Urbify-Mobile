@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -150,7 +151,10 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
             text = "Iniciar sesión",
             isLoading = isLoading,
             enabled = esCorreoValido(correo) && contrasena.isNotBlank(),
-            onClick = { onSubmit(correo.trim(), contrasena) }
+            onClick = { onSubmit(correo.trim(), contrasena) },
+            // El texto "Iniciar sesión" también lo usa el Tab de arriba; el
+            // testTag deja que las pruebas de UI apunten sin ambigüedad.
+            modifier = Modifier.testTag("login_submit_button")
         )
     }
 }
@@ -297,14 +301,15 @@ private fun GradientButton(
     text: String,
     isLoading: Boolean,
     enabled: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Button(
         onClick = onClick,
         enabled = enabled && !isLoading,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(),
         colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Box(
             modifier = Modifier

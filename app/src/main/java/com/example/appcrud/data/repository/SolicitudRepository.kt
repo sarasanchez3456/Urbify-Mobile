@@ -1,12 +1,11 @@
 package com.example.appcrud.data.repository
 
+import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.Solicitud
 
-class SolicitudRepository {
-
-    private val api = RetrofitClient.apiService
+class SolicitudRepository(private val api: ApiService = RetrofitClient.apiService) {
 
     suspend fun createSolicitud(solicitud: Solicitud) {
         api.createSolicitud(solicitud)

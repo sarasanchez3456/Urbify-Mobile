@@ -24,9 +24,10 @@ data class AuthUiState(
     val usuarioLogueado: Usuario? = null
 )
 
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = AuthRepository()
+class AuthViewModel @JvmOverloads constructor(
+    application: Application,
+    private val repository: AuthRepository = AuthRepository()
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
