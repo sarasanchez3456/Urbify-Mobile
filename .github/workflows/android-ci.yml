@@ -1,0 +1,57 @@
+name: Android CI
+
+# Checks obligatorios de todo PR: compilar debug, correr los unit tests y
+# lint. No necesita ningún secret (no firma ni toca release), así que corre
+# igual en PRs de forks.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew lintDebug
+
+      - name: Assemble debug
+        run: ./gradlew assembleDebug
+
+      - name: Verificar que la validación de firma de release funciona
+        # No firma nada: solo confirma que checkReleaseSigningConfig falla
+        # con un mensaje claro cuando no hay keystore configurado (que es el
+        # caso normal de un PR, sin secrets de release).
+        run: |
+          if ./gradlew checkReleaseSigningConfig; then
+            echo "checkReleaseSigningConfig debía fallar sin firma configurada" >&2
+            exit 1
+          fi
+
+      - name: Subir resultados de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/reports/tests/testDebugUnitTest
+          retention-days: 14
+
+      - name: Subir resultados de lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: app/build/reports/lint-results-debug.html
+          retention-days: 14
