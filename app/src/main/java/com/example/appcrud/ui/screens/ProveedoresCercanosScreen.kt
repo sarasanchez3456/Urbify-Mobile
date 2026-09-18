@@ -17,10 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.location.LocationProvider
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.ui.components.EmptyState
@@ -57,7 +59,6 @@ fun ProveedoresCercanosScreen(
 
     var permissionGranted by remember { mutableStateOf(hasLocationPermission()) }
 
-    // Ubicación: 1º GPS (si hay permiso y hay señal), 2º la dirección del perfil.
     fun cargarConMejorUbicacion() {
         scope.launch {
             val gps = if (permissionGranted) locationProvider.getCurrentLocation() else null
@@ -84,10 +85,10 @@ fun ProveedoresCercanosScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Proveedores cercanos") },
+                title = { Text(stringResource(R.string.proveedores_cercanos)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -99,24 +100,24 @@ fun ProveedoresCercanosScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Radio:", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.radio), style = MaterialTheme.typography.labelLarge)
                 listOf(2.0, 5.0, 10.0).forEach { radio ->
                     FilterChip(
                         selected = uiState.radioKm == radio,
                         onClick = { viewModel.setRadio(radio) },
-                        label = { Text("${radio.toInt()} km") }
+                        label = { Text(stringResource(R.string.km, radio.toInt())) }
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 FilterChip(
                     selected = !mostrarMapa,
                     onClick = { mostrarMapa = false },
-                    label = { Text("Lista") }
+                    label = { Text(stringResource(R.string.lista)) }
                 )
                 FilterChip(
                     selected = mostrarMapa,
                     onClick = { mostrarMapa = true },
-                    label = { Text("Mapa") }
+                    label = { Text(stringResource(R.string.mapa)) }
                 )
             }
 
@@ -128,10 +129,10 @@ fun ProveedoresCercanosScreen(
                 ) {
                     Icon(Icons.Default.LocationOff, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(12.dp))
-                    Text("Necesitamos saber dónde estás", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.necesitamos_saber_ubicacion), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Usa tu GPS o elige tu dirección para ver proveedores cerca.",
+                        stringResource(R.string.usa_gps_elege_direccion),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -143,8 +144,8 @@ fun ProveedoresCercanosScreen(
                                 Manifest.permission.ACCESS_COARSE_LOCATION,
                             )
                         )
-                    }) { Text("Usar mi GPS") }
-                    TextButton(onClick = onElegirDireccion) { Text("Elegir mi dirección") }
+                    }) { Text(stringResource(R.string.usar_mi_gps)) }
+                    TextButton(onClick = onElegirDireccion) { Text(stringResource(R.string.elegir_mi_direccion)) }
                 }
 
                 uiState.isLoading -> Box(
@@ -154,9 +155,9 @@ fun ProveedoresCercanosScreen(
 
                 uiState.error != null -> EmptyState(
                     icon = Icons.Default.ErrorOutline,
-                    title = "Algo salió mal",
+                    title = stringResource(R.string.algo_sallo_mal),
                     subtitle = uiState.error,
-                    actionLabel = "Reintentar",
+                    actionLabel = stringResource(R.string.reintentar),
                     onAction = { cargarConMejorUbicacion() }
                 )
 
@@ -168,8 +169,8 @@ fun ProveedoresCercanosScreen(
 
                 uiState.proveedores.isEmpty() -> EmptyState(
                     icon = Icons.Default.LocationOn,
-                    title = "No hay proveedores",
-                    subtitle = "No se encontraron proveedores en el radio seleccionado. Prueba ampliar el radio."
+                    title = stringResource(R.string.no_hay_proveedores),
+                    subtitle = stringResource(R.string.no_proveedores_radio)
                 )
 
                 else -> LazyColumn(
@@ -224,20 +225,20 @@ private fun rememberOsmMapView(
         }
     }
 
+    val tuUbicacion = stringResource(R.string.tu_ubicacion)
+
     LaunchedEffect(userLat, userLng, proveedores) {
         mapView.controller.setZoom(13.0)
         mapView.controller.setCenter(GeoPoint(userLat, userLng))
         mapView.overlays.clear()
 
-        // Marcador de la ubicación del usuario
         Marker(mapView).apply {
             position = GeoPoint(userLat, userLng)
-            title = "Tu ubicación"
+            title = tuUbicacion
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             mapView.overlays.add(this)
         }
 
-        // Marcadores de proveedores
         proveedores.forEach { proveedor ->
             if (proveedor.latitud != null && proveedor.longitud != null) {
                 Marker(mapView).apply {
@@ -289,7 +290,7 @@ private fun ProveedorCard(proveedor: ProveedorCercano) {
             Text(
                 text = if (proveedor.totalCalificaciones > 0)
                     "★ ${formatKm(proveedor.calificacionPromedio)} (${proveedor.totalCalificaciones})"
-                else "Sin calificaciones",
+                else stringResource(R.string.sin_calificaciones),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

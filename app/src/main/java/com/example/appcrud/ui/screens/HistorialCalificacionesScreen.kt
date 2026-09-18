@@ -13,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.Calificacion
 import com.example.appcrud.ui.viewmodel.CalificacionViewModel
 
@@ -36,6 +38,8 @@ fun HistorialCalificacionesScreen(
         viewModel.loadCalificacionesProveedor(proveedorId)
     }
 
+    val defaultError = stringResource(R.string.error_prefijo, "")
+
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -44,7 +48,7 @@ fun HistorialCalificacionesScreen(
     }
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
             viewModel.clearMessages()
         }
     }
@@ -66,8 +70,8 @@ fun HistorialCalificacionesScreen(
     eliminandoCalificacion?.let { cal ->
         AlertDialog(
             onDismissRequest = { eliminandoCalificacion = null },
-            title = { Text("Eliminar calificación") },
-            text = { Text("¿Estás seguro de que quieres eliminar esta calificación?") },
+            title = { Text(stringResource(R.string.eliminar_calificacion)) },
+            text = { Text(stringResource(R.string.seguro_eliminar_calificacion)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -75,10 +79,10 @@ fun HistorialCalificacionesScreen(
                         eliminandoCalificacion = null
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Eliminar") }
+                ) { Text(stringResource(R.string.eliminar)) }
             },
             dismissButton = {
-                TextButton(onClick = { eliminandoCalificacion = null }) { Text("Cancelar") }
+                TextButton(onClick = { eliminandoCalificacion = null }) { Text(stringResource(R.string.cancelar)) }
             }
         )
     }
@@ -87,10 +91,10 @@ fun HistorialCalificacionesScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Calificaciones") },
+                title = { Text(stringResource(R.string.calificaciones_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -112,7 +116,7 @@ fun HistorialCalificacionesScreen(
                         Text(text = uiState.error ?: "", color = MaterialTheme.colorScheme.error)
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = { viewModel.loadCalificacionesProveedor(proveedorId) }) {
-                            Text("Reintentar")
+                            Text(stringResource(R.string.reintentar))
                         }
                     }
                 }
@@ -129,7 +133,7 @@ fun HistorialCalificacionesScreen(
 
                     item {
                         Text(
-                            text = "Opiniones (${uiState.calificaciones.size})",
+                            text = stringResource(R.string.opiniones, uiState.calificaciones.size),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -141,7 +145,7 @@ fun HistorialCalificacionesScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Aún no hay calificaciones",
+                                    text = stringResource(R.string.no_hay_calificaciones),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -173,21 +177,21 @@ private fun EditarCalificacionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Editar calificación") },
+        title = { Text(stringResource(R.string.editar_calificacion)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column {
-                    Text("Puntuación", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.puntuacion), style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         for (i in 1..5) {
                             IconButton(
                                 onClick = { puntuacion = i },
-                                modifier = Modifier.size(40.dp)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = if (i <= puntuacion) Icons.Default.Star else Icons.Default.StarBorder,
-                                    contentDescription = "$i estrellas",
+                                    contentDescription = stringResource(R.string.estrellas, i),
                                     tint = if (i <= puntuacion) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(28.dp)
@@ -199,17 +203,17 @@ private fun EditarCalificacionDialog(
                 OutlinedTextField(
                     value = comentario,
                     onValueChange = { comentario = it },
-                    label = { Text("Comentario") },
+                    label = { Text(stringResource(R.string.comentario)) },
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(puntuacion, comentario) }) { Text("Guardar") }
+            Button(onClick = { onConfirm(puntuacion, comentario) }) { Text(stringResource(R.string.guardar)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancelar)) }
         }
     )
 }
@@ -244,7 +248,7 @@ private fun PromedioCard(calificaciones: List<Calificacion>) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${calificaciones.size} calificaciones",
+                text = stringResource(R.string.calificaciones_count, calificaciones.size),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -292,22 +296,22 @@ private fun CalificacionCard(
                         Spacer(Modifier.width(4.dp))
                         IconButton(
                             onClick = { onEdit(calificacion) },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 Icons.Default.Edit,
-                                contentDescription = "Editar",
+                                contentDescription = stringResource(R.string.editar),
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                         IconButton(
                             onClick = { onDelete(calificacion) },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Eliminar",
+                                contentDescription = stringResource(R.string.eliminar),
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.error
                             )

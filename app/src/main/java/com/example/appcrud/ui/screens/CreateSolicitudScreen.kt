@@ -8,8 +8,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,10 +37,10 @@ fun CreateSolicitudScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nueva Solicitud") },
+                title = { Text(stringResource(R.string.nueva_solicitud)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -58,7 +60,7 @@ fun CreateSolicitudScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Servicio",
+                        text = stringResource(R.string.servicio_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -75,7 +77,7 @@ fun CreateSolicitudScreen(
             OutlinedTextField(
                 value = mensaje,
                 onValueChange = { mensaje = it },
-                label = { Text("Mensaje / Descripción del trabajo") },
+                label = { Text(stringResource(R.string.mensaje_descripcion)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
@@ -86,7 +88,7 @@ fun CreateSolicitudScreen(
             OutlinedTextField(
                 value = direccion,
                 onValueChange = { direccion = it },
-                label = { Text("Dirección del servicio") },
+                label = { Text(stringResource(R.string.direccion_servicio)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -122,7 +124,7 @@ fun CreateSolicitudScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Enviar Solicitud")
+                    Text(stringResource(R.string.enviar_solicitud))
                 }
             }
         }
