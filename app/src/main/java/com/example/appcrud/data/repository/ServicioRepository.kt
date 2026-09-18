@@ -1,10 +1,10 @@
 package com.example.appcrud.data.repository
 
+import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.Servicio
 
-class ServicioRepository {
-    private val api = RetrofitClient.apiService
+class ServicioRepository(private val api: ApiService = RetrofitClient.apiService) {
 
     suspend fun getMisServicios(): List<Servicio> = api.getMisServicios()
     suspend fun getServicio(id: Int): Servicio = api.getServicio(id)

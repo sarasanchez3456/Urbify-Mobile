@@ -1,11 +1,10 @@
 package com.example.appcrud.data.repository
 
+import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.Calificacion
 
-class CalificacionRepository {
-
-    private val api = RetrofitClient.apiService
+class CalificacionRepository(private val api: ApiService = RetrofitClient.apiService) {
 
     suspend fun createCalificacion(calificacion: Calificacion) {
         api.createCalificacion(calificacion)
