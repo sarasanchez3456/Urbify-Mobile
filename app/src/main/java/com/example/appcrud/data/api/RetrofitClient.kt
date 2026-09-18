@@ -1,5 +1,7 @@
 package com.example.appcrud.data.api
 
+import com.example.appcrud.BuildConfig
+import com.example.appcrud.data.session.SessionEvents
 import com.example.appcrud.data.session.TokenManager
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
@@ -29,8 +31,30 @@ object RetrofitClient {
         chain.proceed(request)
     }
 
+    internal fun httpLoggingLevel(isDebug: Boolean): HttpLoggingInterceptor.Level =
+        if (isDebug) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+
+    // En desarrollo solo se registran líneas de petición y respuesta. Release
+    // nunca registra headers ni cuerpos, para no exponer tokens o datos personales.
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = httpLoggingLevel(BuildConfig.DEBUG)
+    }
+
+    // Si el backend responde 401, la sesión ya no es válida: se limpia el
+    // token guardado y se avisa a la UI para que vuelva a login.
+    private val sessionExpiryInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val response = chain.proceed(request)
+        if (response.code == 401 && !isAuthenticationRequest(request)) {
+            TokenManager.clearTokenImmediate()
+            SessionEvents.notifySessionExpired()
+        }
+        response
+    }
+
+    private fun isAuthenticationRequest(request: okhttp3.Request): Boolean {
+        val path = request.url.encodedPath
+        return path.endsWith("/auth/login") || path.endsWith("/auth/registro")
     }
 
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake
@@ -40,6 +64,7 @@ object RetrofitClient {
     // `SET NAMES utf8mb4` y datos reparados).
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .addInterceptor(sessionExpiryInterceptor)
         .addInterceptor(logging)
         .build()
 

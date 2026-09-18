@@ -59,6 +59,9 @@ object TokenManager {
     // flakiness real en tests que llaman init()/shutdown() repetidas veces).
     private var currentGeneration = 0L
 
+    @Volatile
+    private var appContext: Context? = null
+
     fun init(context: Context) {
         init(context.applicationContext.dataStore, CoroutineScope(SupervisorJob() + Dispatchers.IO))
     }
@@ -132,5 +135,19 @@ object TokenManager {
         dataStore = null
         currentGeneration++ // invalida cualquier emisión del collector cancelado que aún esté en vuelo
         _state.value = TokenState.Loading
+    }
+
+    /**
+     * Limpia la sesión sin depender de un Context explícito ni de un
+     * ViewModel. Pensada para llamarse desde el interceptor de Retrofit
+     * cuando el backend responde 401. La memoria se limpia al instante y el
+     * borrado en DataStore se hace en segundo plano.
+     */
+    fun clearTokenImmediate() {
+        cachedToken = null
+        val context = appContext ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            context.dataStore.edit { it.remove(TOKEN_KEY) }
+        }
     }
 }

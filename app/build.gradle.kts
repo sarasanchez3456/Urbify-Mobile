@@ -68,6 +68,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // mockk-android trae transitivamente JUnit 5 (jupiter), que duplica
