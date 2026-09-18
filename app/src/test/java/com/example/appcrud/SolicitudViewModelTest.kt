@@ -1,5 +1,6 @@
 package com.example.appcrud.ui.viewmodel
 
+import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.repository.SolicitudRepository
 import io.mockk.coEvery
@@ -39,8 +40,8 @@ class SolicitudViewModelTest {
     @Test
     fun `loadSolicitudesCliente - exito - muestra solicitudes`() = runTest {
         val solicitudes = listOf(
-            Solicitud(idSolicitud = 1, estado = "pendiente"),
-            Solicitud(idSolicitud = 2, estado = "aceptada")
+            Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE),
+            Solicitud(idSolicitud = 2, estado = EstadoSolicitud.ACEPTADA)
         )
         coEvery { repository.getSolicitudesCliente() } returns solicitudes
 
@@ -101,14 +102,14 @@ class SolicitudViewModelTest {
 
     @Test
     fun `cambiarEstado - exito - actualiza estado optimista y recarga`() = runTest {
-        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = "pendiente"))
+        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE))
         coEvery { repository.getSolicitudesCliente() } returns solicitudes
-        coEvery { repository.cambiarEstado(1, "aceptada") } returns Unit
+        coEvery { repository.cambiarEstado(1, EstadoSolicitud.ACEPTADA) } returns Unit
 
         viewModel.loadSolicitudesCliente()
         advanceUntilIdle()
 
-        viewModel.cambiarEstado(1, "aceptada")
+        viewModel.cambiarEstado(1, EstadoSolicitud.ACEPTADA)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -118,18 +119,18 @@ class SolicitudViewModelTest {
 
     @Test
     fun `cambiarEstado - error - revierte el estado`() = runTest {
-        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = "pendiente"))
+        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE))
         coEvery { repository.getSolicitudesCliente() } returns solicitudes
-        coEvery { repository.cambiarEstado(1, "aceptada") } throws RuntimeException("State change failed")
+        coEvery { repository.cambiarEstado(1, EstadoSolicitud.ACEPTADA) } throws RuntimeException("State change failed")
 
         viewModel.loadSolicitudesCliente()
         advanceUntilIdle()
 
-        viewModel.cambiarEstado(1, "aceptada")
+        viewModel.cambiarEstado(1, EstadoSolicitud.ACEPTADA)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertEquals("pendiente", state.solicitudes.first().estado)
+        assertEquals(EstadoSolicitud.PENDIENTE, state.solicitudes.first().estado)
         assertNotNull(state.error)
         assertFalse(state.procesando.contains(1))
     }
