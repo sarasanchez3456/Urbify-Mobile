@@ -11,8 +11,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.CalificacionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,10 +41,10 @@ fun CalificarScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Calificar servicio") },
+                title = { Text(stringResource(R.string.calificar_servicio_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -62,7 +64,7 @@ fun CalificarScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Servicio completado",
+                        text = stringResource(R.string.servicio_completado),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -77,7 +79,7 @@ fun CalificarScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "¿Cómo fue tu experiencia?",
+                text = stringResource(R.string.como_fue_experiencia),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
@@ -95,7 +97,7 @@ fun CalificarScreen(
                     ) {
                         Icon(
                             imageVector = if (i <= puntuacion) Icons.Default.Star else Icons.Default.StarBorder,
-                            contentDescription = "$i estrellas",
+                            contentDescription = stringResource(R.string.estrellas, i),
                             tint = if (i <= puntuacion) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(48.dp)
@@ -107,11 +109,11 @@ fun CalificarScreen(
             if (puntuacion > 0) {
                 Text(
                     text = when (puntuacion) {
-                        1 -> "Malo"
-                        2 -> "Regular"
-                        3 -> "Bueno"
-                        4 -> "Muy bueno"
-                        5 -> "Excelente"
+                        1 -> stringResource(R.string.malo)
+                        2 -> stringResource(R.string.regular)
+                        3 -> stringResource(R.string.bueno)
+                        4 -> stringResource(R.string.muy_bueno)
+                        5 -> stringResource(R.string.excelente)
                         else -> ""
                     },
                     style = MaterialTheme.typography.bodyMedium,
@@ -125,7 +127,7 @@ fun CalificarScreen(
             OutlinedTextField(
                 value = comentario,
                 onValueChange = { comentario = it },
-                label = { Text("Comentario (opcional)") },
+                label = { Text(stringResource(R.string.comentario_opcional)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
@@ -164,7 +166,7 @@ fun CalificarScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Enviar calificación")
+                    Text(stringResource(R.string.enviar_calificacion))
                 }
             }
         }

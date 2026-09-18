@@ -17,7 +17,7 @@ data class CalificacionUiState(
     val successMessage: String? = null
 )
 
-class CalificacionViewModel(
+class CalificacionViewModel @JvmOverloads constructor(
     private val repository: CalificacionRepository = CalificacionRepository()
 ) : ViewModel() {
 

@@ -19,7 +19,7 @@ data class SolicitudUiState(
     val procesando: Set<Int> = emptySet(),
 )
 
-class SolicitudViewModel(
+class SolicitudViewModel @JvmOverloads constructor(
     private val repository: SolicitudRepository = SolicitudRepository()
 ) : ViewModel() {
 
