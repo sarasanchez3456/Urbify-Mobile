@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Stats
 import com.example.appcrud.data.repository.StatsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,7 @@ class StatsViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al cargar estadísticas"
+                    error = e.aMensajeUsuario()
                 )
             }
         }

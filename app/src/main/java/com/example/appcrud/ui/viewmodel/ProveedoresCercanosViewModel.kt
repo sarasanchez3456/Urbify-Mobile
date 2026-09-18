@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.data.repository.ProveedorRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +48,7 @@ class ProveedoresCercanosViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al cargar proveedores cercanos"
+                    error = e.aMensajeUsuario()
                 )
             }
         }

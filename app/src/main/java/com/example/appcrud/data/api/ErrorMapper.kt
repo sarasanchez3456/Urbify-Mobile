@@ -23,6 +23,8 @@ fun Throwable.aMensajeUsuario(): String = when (this) {
         401 -> "Tu sesión expiró. Inicia sesión de nuevo."
         403 -> "No tienes permiso para realizar esta acción."
         404 -> "No se encontró la información solicitada."
+        400, 422 -> "Revisa los datos ingresados e intenta de nuevo."
+        409 -> "No se pudo completar la acción porque los datos cambiaron. Intenta de nuevo."
         in 500..599 -> "Hubo un problema en el servidor. Intenta más tarde."
         else -> "Ocurrió un error al comunicarse con el servidor."
     }
@@ -30,5 +32,5 @@ fun Throwable.aMensajeUsuario(): String = when (this) {
     is IOException ->
         "Problema de conexión. Verifica tu red e intenta de nuevo."
 
-    else -> message ?: "Ocurrió un error inesperado."
+    else -> "Ocurrió un error inesperado. Intenta de nuevo."
 }

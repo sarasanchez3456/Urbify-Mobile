@@ -1,8 +1,9 @@
 package com.example.appcrud.data.session
 
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Punto único para avisar, desde fuera de un ViewModel, que la sesión dejó
@@ -11,10 +12,18 @@ import kotlinx.coroutines.flow.asSharedFlow
  * limpiando la pila y el estado de sesión.
  */
 object SessionEvents {
-    private val _sessionExpired = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val sessionExpired: SharedFlow<Unit> = _sessionExpired.asSharedFlow()
+    private val sessionInvalidated = AtomicBoolean(false)
+    private val events = Channel<Unit>(Channel.CONFLATED)
+    val sessionExpired: Flow<Unit> = events.receiveAsFlow()
 
     fun notifySessionExpired() {
-        _sessionExpired.tryEmit(Unit)
+        if (sessionInvalidated.compareAndSet(false, true)) {
+            events.trySend(Unit)
+        }
+    }
+
+    /** Permite que una sesión autenticada nueva vuelva a notificar una expiración. */
+    fun markSessionActive() {
+        sessionInvalidated.set(false)
     }
 }

@@ -1,5 +1,6 @@
 package com.example.appcrud.data.api
 
+import com.example.appcrud.BuildConfig
 import com.example.appcrud.data.session.SessionEvents
 import com.example.appcrud.data.session.TokenManager
 import com.google.gson.GsonBuilder
@@ -10,8 +11,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // localhost invertido mediante adb reverse para saltar el Firewall de Windows.
-    private const val BASE_URL = "http://127.0.0.1:4000/api/"
+    // 10.0.2.2 = "localhost" del host visto desde el emulador de Android.
+    private const val BASE_URL = "http://10.0.2.2:4000/api/"
 
     private val gson = GsonBuilder()
         .setLenient()
@@ -30,32 +31,30 @@ object RetrofitClient {
         chain.proceed(request)
     }
 
-    // Solo se registra el cuerpo completo de las peticiones en debug. En
-    // release nunca se loguean headers ni cuerpos, para no exponer el token
-    // ni datos personales en los logs de producción.
+    internal fun httpLoggingLevel(isDebug: Boolean): HttpLoggingInterceptor.Level =
+        if (isDebug) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+
+    // En desarrollo solo se registran líneas de petición y respuesta. Release
+    // nunca registra headers ni cuerpos, para no exponer tokens o datos personales.
     private val logging = HttpLoggingInterceptor().apply {
-        val isDebug = try {
-            val clazz = Class.forName("com.example.appcrud.BuildConfig")
-            clazz.getField("DEBUG").getBoolean(null)
-        } catch (_: Exception) {
-            true
-        }
-        level = if (isDebug) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
+        level = httpLoggingLevel(BuildConfig.DEBUG)
     }
 
     // Si el backend responde 401, la sesión ya no es válida: se limpia el
     // token guardado y se avisa a la UI para que vuelva a login.
     private val sessionExpiryInterceptor = Interceptor { chain ->
-        val response = chain.proceed(chain.request())
-        if (response.code == 401) {
+        val request = chain.request()
+        val response = chain.proceed(request)
+        if (response.code == 401 && !isAuthenticationRequest(request)) {
             TokenManager.clearTokenImmediate()
             SessionEvents.notifySessionExpired()
         }
         response
+    }
+
+    private fun isAuthenticationRequest(request: okhttp3.Request): Boolean {
+        val path = request.url.encodedPath
+        return path.endsWith("/auth/login") || path.endsWith("/auth/registro")
     }
 
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake

@@ -3,6 +3,7 @@ package com.example.appcrud.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.AuthResponse
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Usuario
@@ -61,7 +62,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Error de conexión") }
+                _uiState.update { it.copy(isLoading = false, error = e.aMensajeUsuario()) }
             }
         }
     }

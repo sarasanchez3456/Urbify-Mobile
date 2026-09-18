@@ -22,7 +22,11 @@ object TokenManager {
     @Volatile
     private var cachedToken: String? = null
 
+    @Volatile
+    private var appContext: Context? = null
+
     fun init(context: Context) {
+        appContext = context.applicationContext
         CoroutineScope(Dispatchers.IO).launch {
             context.applicationContext.dataStore.data
                 .map { it[TOKEN_KEY] }
@@ -40,5 +44,19 @@ object TokenManager {
     suspend fun clearToken(context: Context) {
         cachedToken = null
         context.applicationContext.dataStore.edit { it.remove(TOKEN_KEY) }
+    }
+
+    /**
+     * Limpia la sesión sin depender de un Context explícito ni de un
+     * ViewModel. Pensada para llamarse desde el interceptor de Retrofit
+     * cuando el backend responde 401. La memoria se limpia al instante y el
+     * borrado en DataStore se hace en segundo plano.
+     */
+    fun clearTokenImmediate() {
+        cachedToken = null
+        val context = appContext ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            context.dataStore.edit { it.remove(TOKEN_KEY) }
+        }
     }
 }

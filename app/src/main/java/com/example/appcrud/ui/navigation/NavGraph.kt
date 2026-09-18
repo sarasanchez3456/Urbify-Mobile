@@ -130,6 +130,7 @@ fun AppNavGraph(
             composable(Routes.LOGIN) {
                 AuthScreen(
                     onAuthSuccess = { usuario ->
+                        SessionEvents.markSessionActive()
                         sessionViewModel.setSession(usuario)
                         navController.navigate(Routes.HOME) {
                             // popUpTo(0) limpia TODA la pila y los estados guardados,
