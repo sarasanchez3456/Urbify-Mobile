@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,6 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -44,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Usuario
@@ -59,7 +64,7 @@ fun AuthScreen(
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var tab by remember { mutableIntStateOf(0) } // 0 = login, 1 = registro
+    var tab by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(uiState.success) {
         if (uiState.success) uiState.usuarioLogueado?.let { onAuthSuccess(it) }
@@ -74,7 +79,7 @@ fun AuthScreen(
     ) {
         Spacer(Modifier.height(32.dp))
         Text(
-            text = "URBIFY",
+            text = stringResource(R.string.urbify),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 6.sp,
@@ -82,24 +87,27 @@ fun AuthScreen(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Servicios urbanos",
+            text = stringResource(R.string.servicios_urbanos),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(28.dp))
 
         PrimaryTabRow(selectedTabIndex = tab, modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
-            Tab(selected = tab == 0, onClick = { tab = 0; viewModel.clearError() }, text = { Text("Iniciar sesión") })
-            Tab(selected = tab == 1, onClick = { tab = 1; viewModel.clearError() }, text = { Text("Registrarse") })
+            Tab(selected = tab == 0, onClick = { tab = 0; viewModel.clearError() }, text = { Text(stringResource(R.string.iniciar_sesion)) })
+            Tab(selected = tab == 1, onClick = { tab = 1; viewModel.clearError() }, text = { Text(stringResource(R.string.registrarse)) })
         }
 
         Spacer(Modifier.height(20.dp))
 
         if (uiState.bloqueado) {
             AuthAlert(
-                titulo = "Cuenta bloqueada temporalmente",
-                detalle = "Intenta de nuevo en ${uiState.minutosRestantes} minuto" +
-                        if (uiState.minutosRestantes != 1) "s" else ""
+                titulo = stringResource(R.string.cuenta_bloqueada),
+                detalle = stringResource(
+                    R.string.intentar_de_nuevo,
+                    uiState.minutosRestantes,
+                    if (uiState.minutosRestantes != 1) "s" else ""
+                )
             )
             Spacer(Modifier.height(12.dp))
         } else if (uiState.error != null) {
@@ -127,11 +135,11 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
         OutlinedTextField(
             value = correo,
             onValueChange = { correo = it },
-            label = { Text("Correo electrónico") },
+            label = { Text(stringResource(R.string.correo_electronico)) },
             singleLine = true,
             isError = correoConError,
             supportingText = {
-                if (correoConError) Text("Formato de correo inválido")
+                if (correoConError) Text(stringResource(R.string.formato_correo_invalido))
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
@@ -140,7 +148,7 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
         OutlinedTextField(
             value = contrasena,
             onValueChange = { contrasena = it },
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(R.string.contraseña)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -148,7 +156,7 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
         )
         Spacer(Modifier.height(20.dp))
         GradientButton(
-            text = "Iniciar sesión",
+            text = stringResource(R.string.iniciar_sesion),
             isLoading = isLoading,
             enabled = esCorreoValido(correo) && contrasena.isNotBlank(),
             onClick = { onSubmit(correo.trim(), contrasena) },
@@ -180,14 +188,14 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it },
-                label = { Text("Nombre") },
+                label = { Text(stringResource(R.string.nombre)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
                 value = apellido,
                 onValueChange = { apellido = it },
-                label = { Text("Apellido") },
+                label = { Text(stringResource(R.string.apellido)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
@@ -196,11 +204,11 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
         OutlinedTextField(
             value = correo,
             onValueChange = { correo = it },
-            label = { Text("Correo electrónico") },
+            label = { Text(stringResource(R.string.correo_electronico)) },
             singleLine = true,
             isError = correoConError,
             supportingText = {
-                if (correoConError) Text("Formato de correo inválido")
+                if (correoConError) Text(stringResource(R.string.formato_correo_invalido))
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
@@ -209,7 +217,7 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
         OutlinedTextField(
             value = contrasena,
             onValueChange = { contrasena = it },
-            label = { Text("Contraseña (mín. 6)") },
+            label = { Text(stringResource(R.string.contraseña_min)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -220,7 +228,7 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
             OutlinedTextField(
                 value = telefono,
                 onValueChange = { telefono = it },
-                label = { Text("Teléfono") },
+                label = { Text(stringResource(R.string.telefono)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.weight(1f)
@@ -228,31 +236,31 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
             OutlinedTextField(
                 value = direccion,
                 onValueChange = { direccion = it },
-                label = { Text("Dirección") },
+                label = { Text(stringResource(R.string.direccion)) },
                 singleLine = true,
                 modifier = Modifier.weight(1f)
             )
         }
         Spacer(Modifier.height(16.dp))
-        Text("Tipo de cuenta", style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.tipo_cuenta), style = MaterialTheme.typography.labelLarge)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            RolOption("Cliente", rol == Rol.CLIENTE, Modifier.weight(1f)) { rol = Rol.CLIENTE }
-            RolOption("Proveedor", rol == Rol.PROVEEDOR, Modifier.weight(1f)) { rol = Rol.PROVEEDOR }
+            RolOption(stringResource(R.string.cliente), rol == Rol.CLIENTE, Modifier.weight(1f)) { rol = Rol.CLIENTE }
+            RolOption(stringResource(R.string.proveedor), rol == Rol.PROVEEDOR, Modifier.weight(1f)) { rol = Rol.PROVEEDOR }
         }
         if (rol == Rol.PROVEEDOR) {
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = oficio,
                 onValueChange = { oficio = it },
-                label = { Text("Oficio") },
+                label = { Text(stringResource(R.string.oficio)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         Spacer(Modifier.height(20.dp))
         GradientButton(
-            text = "Crear cuenta",
+            text = stringResource(R.string.crear_cuenta),
             isLoading = isLoading,
             enabled = camposOk,
             onClick = {
@@ -282,7 +290,9 @@ private fun RolOption(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.semantics {
+            contentDescription = if (selected) "$label seleccionado" else label
+        },
         colors = if (selected) {
             ButtonDefaults.outlinedButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
@@ -309,7 +319,11 @@ private fun GradientButton(
         enabled = enabled && !isLoading,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(),
         colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = if (isLoading) "$text, cargando" else text
+            }
     ) {
         Box(
             modifier = Modifier
@@ -325,7 +339,9 @@ private fun GradientButton(
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.height(20.dp),
+                    modifier = Modifier
+                        .height(20.dp)
+                        .size(20.dp),
                     strokeWidth = 2.dp,
                     color = androidx.compose.ui.graphics.Color.White
                 )

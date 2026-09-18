@@ -13,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.components.EmptyState
@@ -30,12 +32,14 @@ fun MisSolicitudesProveedorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val defaultError = stringResource(R.string.error_prefijo, "")
+
     LaunchedEffect(Unit) {
         viewModel.loadSolicitudesProveedor()
     }
 
     LaunchedEffect(uiState.successMessage, uiState.error) {
-        (uiState.error?.let { "Error: $it" } ?: uiState.successMessage)?.let {
+        (uiState.error?.let { defaultError.format(it) } ?: uiState.successMessage)?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
@@ -45,10 +49,10 @@ fun MisSolicitudesProveedorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Solicitudes Recibidas") },
+                title = { Text(stringResource(R.string.solicitudes_recibidas)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -68,9 +72,9 @@ fun MisSolicitudesProveedorScreen(
             uiState.error != null && uiState.solicitudes.isEmpty() -> {
                 EmptyState(
                     icon = Icons.Default.Inbox,
-                    title = "Algo salió mal",
+                    title = stringResource(R.string.algo_sallo_mal),
                     subtitle = uiState.error,
-                    actionLabel = "Reintentar",
+                    actionLabel = stringResource(R.string.reintentar),
                     onAction = { viewModel.loadSolicitudesProveedor() },
                     modifier = Modifier.padding(padding)
                 )
@@ -78,8 +82,8 @@ fun MisSolicitudesProveedorScreen(
             uiState.solicitudes.isEmpty() -> {
                 EmptyState(
                     icon = Icons.Default.Inbox,
-                    title = "No tienes solicitudes recibidas",
-                    subtitle = "Las solicitudes de clientes aparecerán aquí",
+                    title = stringResource(R.string.no_tienes_solicitudes_recibidas),
+                    subtitle = stringResource(R.string.solicitudes_clientes_apareceran),
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -98,7 +102,6 @@ fun MisSolicitudesProveedorScreen(
                             procesando = ocupado,
                             onClick = { onDetalle(solicitud) },
                             onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
-                            // El backend no tiene "rechazada": rechazar un pendiente = cancelar.
                             onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
                             onIniciar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
                             onCompletar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA) } }
@@ -141,7 +144,7 @@ private fun SolicitudProveedorCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = solicitud.tituloServicio ?: "Servicio",
+                    text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -163,7 +166,7 @@ private fun SolicitudProveedorCard(
             if (solicitud.nombreCliente != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Cliente: ${solicitud.nombreCliente}",
+                    text = stringResource(R.string.cliente_label, solicitud.nombreCliente),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -213,7 +216,7 @@ private fun SolicitudProveedorCard(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Rechazar")
+                            Text(stringResource(R.string.rechazar))
                         }
                         Button(
                             onClick = onAceptar,
@@ -225,7 +228,7 @@ private fun SolicitudProveedorCard(
                             } else {
                                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Aceptar")
+                                Text(stringResource(R.string.aceptar))
                             }
                         }
                     }
@@ -237,7 +240,7 @@ private fun SolicitudProveedorCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                        else Text("Iniciar trabajo")
+                        else Text(stringResource(R.string.iniciar_trabajo))
                     }
                 }
                 EstadoSolicitud.EN_PROCESO -> {
@@ -247,7 +250,7 @@ private fun SolicitudProveedorCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                        else Text("Marcar como completado")
+                        else Text(stringResource(R.string.marcar_completado))
                     }
                 }
             }

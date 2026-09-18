@@ -44,12 +44,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Servicio
@@ -94,6 +98,8 @@ fun ClienteHomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val sessionState by sessionViewModel.state.collectAsState()
     val usuario = sessionState.usuario
+    val defaultNombre = stringResource(R.string.cliente)
+    val defaultDireccion = stringResource(R.string.elige_tu_direccion)
 
     LaunchedEffect(Unit) { viewModel.cargarDatos() }
 
@@ -104,8 +110,8 @@ fun ClienteHomeScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         ClientHeader(
-            nombre = usuario?.nombre?.trim().orEmpty().ifBlank { "cliente" }.replaceFirstChar { it.uppercase() },
-            direccion = usuario?.direccion?.trim().orEmpty().ifBlank { "Elige tu dirección" },
+            nombre = usuario?.nombre?.trim().orEmpty().ifBlank { defaultNombre }.replaceFirstChar { it.uppercase() },
+            direccion = usuario?.direccion?.trim().orEmpty().ifBlank { defaultDireccion },
             onElegirDireccion = onElegirDireccion,
             onNotificaciones = onNotificaciones,
         )
@@ -221,7 +227,7 @@ private fun ClientHeader(
                     }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("Hola,", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+                        Text(stringResource(R.string.hola), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
                         Text(
                             text = nombre,
                             style = MaterialTheme.typography.headlineSmall,
@@ -240,13 +246,13 @@ private fun ClientHeader(
                         .clickable(onClick = onNotificaciones),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
                 }
             }
 
             Spacer(Modifier.height(10.dp))
             Text(
-                text = "Encuentra el servicio que necesitas",
+                text = stringResource(R.string.encuentra_servicio),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.9f),
             )
@@ -271,7 +277,7 @@ private fun ClientHeader(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.width(2.dp))
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Cambiar dirección", tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.KeyboardArrowDown, contentDescription = stringResource(R.string.cambiar_direccion), tint = Color.White, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -301,7 +307,7 @@ private fun SearchBar(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("¿Qué servicio necesitas hoy?", color = TextoTenue) },
+                placeholder = { Text(stringResource(R.string.que_servicio_necesitas), color = TextoTenue) },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
@@ -325,7 +331,7 @@ private fun SearchBar(
                     .clickable(onClick = onFiltros),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Default.Tune, contentDescription = "Filtros", tint = AzulPrimario, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Tune, contentDescription = stringResource(R.string.filtros), tint = AzulPrimario, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -339,14 +345,14 @@ private fun CategorySection(
     onVerMas: () -> Unit,
 ) {
     Column {
-        TituloSeccion("Categorías")
+        TituloSeccion(stringResource(R.string.categorias))
         Spacer(Modifier.height(14.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(categorias) { categoria ->
                 CategoryCard(categoria = categoria, onClick = { onCategoriaClick(categoria) })
             }
             item {
-                VerTodoChip(texto = "Ver todo", onClick = onVerMas)
+                VerTodoChip(texto = stringResource(R.string.ver_todo), onClick = onVerMas)
             }
         }
     }
@@ -439,8 +445,8 @@ private fun ExploraMapaCard(onClick: () -> Unit) {
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Explora el mapa", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("Encuentra proveedores cerca de ti", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+                Text(stringResource(R.string.explora_mapa), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(stringResource(R.string.encuentra_proveedores_cerca), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
             }
             Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
         }
@@ -455,11 +461,11 @@ private fun FeaturedServicesSection(
     onServicioClick: (Servicio) -> Unit,
 ) {
     Column {
-        SeccionConVerTodo(titulo = "Servicios destacados", verTodoTexto = "Ver todos", onVerTodo = onVerTodos)
+        SeccionConVerTodo(titulo = stringResource(R.string.servicios_destacados), verTodoTexto = stringResource(R.string.ver_todos), onVerTodo = onVerTodos)
         Spacer(Modifier.height(14.dp))
         if (servicios.isEmpty()) {
             Text(
-                text = "Aún no hay servicios destacados.",
+                text = stringResource(R.string.no_hay_servicios_destacados),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextoTenue,
             )
@@ -552,7 +558,7 @@ private fun ServiceCard(servicio: Servicio, onClick: () -> Unit) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Desde ${formatearPrecio(servicio.precio)}",
+                    text = stringResource(R.string.desde_precio, formatearPrecio(servicio.precio)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = AzulPrimario,
@@ -570,7 +576,7 @@ private fun RequestsSection(
     onSolicitudClick: (Solicitud) -> Unit,
 ) {
     Column {
-        SeccionConVerTodo(titulo = "Mis solicitudes", verTodoTexto = "Ver todas", onVerTodo = onVerTodas)
+        SeccionConVerTodo(titulo = stringResource(R.string.mis_solicitudes), verTodoTexto = stringResource(R.string.ver_todas), onVerTodo = onVerTodas)
         Spacer(Modifier.height(14.dp))
         if (solicitudes.isEmpty()) {
             EmptyRequestsCard()
@@ -588,8 +594,8 @@ private fun EmptyRequestsCard() {
         icono = Icons.AutoMirrored.Filled.Assignment,
         iconoFondo = AzulSuave,
         iconoTint = AzulPrimario,
-        titulo = "No tienes solicitudes activas.",
-        subtitulo = "Cuando hagas una solicitud, podrás ver el estado aquí.",
+        titulo = stringResource(R.string.no_tienes_solicitudes_activas),
+        subtitulo = stringResource(R.string.cuando_hagas_solicitud),
     )
 }
 
@@ -616,7 +622,7 @@ private fun SolicitudActivaCard(solicitud: Solicitud, onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = solicitud.tituloServicio ?: "Servicio",
+                    text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = TextoPrincipal,
@@ -624,7 +630,7 @@ private fun SolicitudActivaCard(solicitud: Solicitud, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = solicitud.nombreProveedor?.let { "Con $it" } ?: "Buscando proveedor",
+                    text = solicitud.nombreProveedor?.let { stringResource(R.string.proveedor_label, it) } ?: stringResource(R.string.buscando_proveedor),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextoTenue,
                     maxLines = 1,
@@ -640,9 +646,9 @@ private fun SolicitudActivaCard(solicitud: Solicitud, onClick: () -> Unit) {
 @Composable
 private fun EstadoChip(estado: String?) {
     val (texto, color) = when (estado) {
-        EstadoSolicitud.PENDIENTE -> "Pendiente" to Estrella
-        EstadoSolicitud.ACEPTADA -> "Agendado" to AzulPrimario
-        EstadoSolicitud.EN_PROCESO -> "En curso" to Verde
+        EstadoSolicitud.PENDIENTE -> stringResource(R.string.pendiente) to Estrella
+        EstadoSolicitud.ACEPTADA -> stringResource(R.string.agendado) to AzulPrimario
+        EstadoSolicitud.EN_PROCESO -> stringResource(R.string.en_curso) to Verde
         else -> (estado ?: "—") to TextoTenue
     }
     Box(
@@ -667,7 +673,7 @@ private fun EstadoChip(estado: String?) {
 @Composable
 private fun FavoritesSection() {
     Column {
-        SeccionConVerTodo(titulo = "Tus favoritos", verTodoTexto = "Ver todos", onVerTodo = {})
+        SeccionConVerTodo(titulo = stringResource(R.string.tus_favoritos), verTodoTexto = stringResource(R.string.ver_todos), onVerTodo = {})
         Spacer(Modifier.height(14.dp))
         EmptyFavoritesCard()
     }
@@ -679,8 +685,8 @@ private fun EmptyFavoritesCard() {
         icono = Icons.Default.FavoriteBorder,
         iconoFondo = Estrella.copy(alpha = 0.15f),
         iconoTint = Estrella,
-        titulo = "Aún no tienes servicios guardados.",
-        subtitulo = "Guarda tus servicios favoritos para acceder más rápido.",
+        titulo = stringResource(R.string.no_tienes_servicios_guardados),
+        subtitulo = stringResource(R.string.guarda_servicios_favoritos),
     )
 }
 
@@ -735,7 +741,7 @@ private fun ExploreServicesButton(onClick: () -> Unit) {
     ) {
         Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
-        Text("Explorar servicios", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        Text(stringResource(R.string.explorar_servicios), fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(Modifier.width(6.dp))
         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
     }
@@ -770,17 +776,17 @@ private fun ErrorCard(onReintentar: () -> Unit) {
         ) {
             Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = RojoError, modifier = Modifier.size(36.dp))
             Spacer(Modifier.height(10.dp))
-            Text(
-                "No pudimos cargar tu información.",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = TextoPrincipal,
-            )
-            Text(
-                "Verifica tu conexión e inténtalo de nuevo.",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextoTenue,
-            )
+                Text(
+                    stringResource(R.string.no_se_pudo_cargar_info),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextoPrincipal,
+                )
+                Text(
+                    stringResource(R.string.verifica_conexion),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextoTenue,
+                )
             Spacer(Modifier.height(14.dp))
             Button(
                 onClick = onReintentar,
@@ -789,7 +795,7 @@ private fun ErrorCard(onReintentar: () -> Unit) {
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Reintentar")
+                Text(stringResource(R.string.reintentar))
             }
         }
     }
