@@ -20,20 +20,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew :app:test
 
       - name: Lint
-        run: ./gradlew lintDebug
+        run: ./gradlew :app:lint
 
       - name: Assemble debug
-        run: ./gradlew assembleDebug
+        run: ./gradlew :app:assembleDebug
 
       - name: Subir resultados de tests
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: app/build/reports/tests/testDebugUnitTest
+          path: app/build/reports/tests/
           retention-days: 14
 
       - name: Subir resultados de lint
@@ -41,5 +41,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lint-results
-          path: app/build/reports/lint-results-debug.html
+          path: app/build/reports/
           retention-days: 14
