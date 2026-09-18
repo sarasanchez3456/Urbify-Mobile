@@ -3,6 +3,7 @@ package com.example.appcrud.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Usuario
@@ -19,9 +20,10 @@ data class SessionState(
     val updateSuccess: Boolean = false
 )
 
-class SessionViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val api = RetrofitClient.apiService
+class SessionViewModel @JvmOverloads constructor(
+    application: Application,
+    private val api: ApiService = RetrofitClient.apiService
+) : AndroidViewModel(application) {
 
     private val _state = MutableStateFlow(SessionState())
     val state: StateFlow<SessionState> = _state.asStateFlow()

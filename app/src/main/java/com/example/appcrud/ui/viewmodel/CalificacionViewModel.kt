@@ -18,9 +18,9 @@ data class CalificacionUiState(
     val successMessage: String? = null
 )
 
-class CalificacionViewModel : ViewModel() {
-
-    private val repository = CalificacionRepository()
+class CalificacionViewModel @JvmOverloads constructor(
+    private val repository: CalificacionRepository = CalificacionRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CalificacionUiState())
     val uiState: StateFlow<CalificacionUiState> = _uiState.asStateFlow()
