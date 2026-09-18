@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -75,6 +78,11 @@ fun AppNavGraph(
     // Scoped to the Activity — shared across all destinations
     val sessionViewModel: SessionViewModel = viewModel()
     val sessionState by sessionViewModel.state.collectAsState()
+
+    // Refresh triggers — increment after mutations to force list reload
+    var serviciosRefresh by remember { mutableIntStateOf(0) }
+    var solicitudesRefresh by remember { mutableIntStateOf(0) }
+    var calificacionesRefresh by remember { mutableIntStateOf(0) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -247,7 +255,10 @@ fun AppNavGraph(
                     idServicio = idServicio,
                     tituloServicio = tituloServicio,
                     onBack = { navController.popBackStack() },
-                    onSuccess = { navController.popBackStack() }
+                    onSuccess = {
+                        solicitudesRefresh++
+                        navController.popBackStack()
+                    }
                 )
             }
 
@@ -261,7 +272,8 @@ fun AppNavGraph(
                         solicitud.idSolicitud?.let { id ->
                             navController.navigate(Routes.detalleSolicitud(id, esProveedor))
                         }
-                    }
+                    },
+                    refreshTrigger = solicitudesRefresh
                 )
             }
 
@@ -289,7 +301,10 @@ fun AppNavGraph(
                     idSolicitud = idSolicitud,
                     idProveedor = idProveedor,
                     onBack = { navController.popBackStack() },
-                    onSuccess = { navController.popBackStack() }
+                    onSuccess = {
+                        calificacionesRefresh++
+                        navController.popBackStack()
+                    }
                 )
             }
 
@@ -303,7 +318,8 @@ fun AppNavGraph(
                 HistorialCalificacionesScreen(
                     proveedorId = proveedorId,
                     clienteId = sessionState.usuario?.idUsuario,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    refreshTrigger = calificacionesRefresh
                 )
             }
 
@@ -324,7 +340,8 @@ fun AppNavGraph(
             composable(Routes.MIS_SERVICIOS) {
                 MisServiciosScreen(
                     onCrear = { navController.navigate(Routes.CREAR_SERVICIO) },
-                    onEditar = { idServicio -> navController.navigate(Routes.editarServicio(idServicio)) }
+                    onEditar = { idServicio -> navController.navigate(Routes.editarServicio(idServicio)) },
+                    refreshTrigger = serviciosRefresh
                 )
             }
 
@@ -332,7 +349,10 @@ fun AppNavGraph(
                 CreateEditServicioScreen(
                     idServicio = null,
                     onBack = { navController.popBackStack() },
-                    onSuccess = { navController.popBackStack() }
+                    onSuccess = {
+                        serviciosRefresh++
+                        navController.popBackStack()
+                    }
                 )
             }
 
@@ -343,7 +363,10 @@ fun AppNavGraph(
                 CreateEditServicioScreen(
                     idServicio = backStackEntry.arguments?.getInt("idServicio"),
                     onBack = { navController.popBackStack() },
-                    onSuccess = { navController.popBackStack() }
+                    onSuccess = {
+                        serviciosRefresh++
+                        navController.popBackStack()
+                    }
                 )
             }
 

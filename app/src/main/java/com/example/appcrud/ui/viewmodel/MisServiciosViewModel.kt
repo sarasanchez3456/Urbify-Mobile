@@ -12,13 +12,14 @@ import kotlinx.coroutines.launch
 data class MisServiciosUiState(
     val servicios: List<Servicio> = emptyList(),
     val isLoading: Boolean = false,
+    val isEliminando: Boolean = false,
     val error: String? = null,
     val successMessage: String? = null
 )
 
-class MisServiciosViewModel : ViewModel() {
-
-    private val repository = ServicioRepository()
+class MisServiciosViewModel(
+    private val repository: ServicioRepository = ServicioRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MisServiciosUiState())
     val uiState: StateFlow<MisServiciosUiState> = _uiState.asStateFlow()
@@ -38,9 +39,12 @@ class MisServiciosViewModel : ViewModel() {
         }
     }
 
+    fun recargar() = cargar()
+
     fun eliminar(idServicio: Int) {
+        if (_uiState.value.isEliminando) return
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isEliminando = true, error = null)
             try {
                 repository.deleteServicio(idServicio)
                 val nuevos = _uiState.value.servicios.filterNot { it.idServicio == idServicio }
@@ -50,7 +54,7 @@ class MisServiciosViewModel : ViewModel() {
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
+                    isEliminando = false,
                     error = e.message ?: "Error al eliminar servicio"
                 )
             }

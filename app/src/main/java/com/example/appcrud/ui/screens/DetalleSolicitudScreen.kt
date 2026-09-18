@@ -35,8 +35,6 @@ fun DetalleSolicitudScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultError = stringResource(R.string.error_prefijo, "")
 
-    // La ruta sólo transporta el identificador: al recrear la actividad se vuelve
-    // a obtener la solicitud desde el repositorio mediante el ViewModel.
     LaunchedEffect(solicitudId, esProveedor) {
         if (solicitudId > 0) viewModel.loadDetalle(solicitudId, esProveedor)
     }
@@ -146,6 +144,7 @@ private fun SolicitudDetalleContenido(
                         solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.CANCELADA) }
                         confirmarCancelar = false
                     },
+                    enabled = !procesando,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) { Text(stringResource(R.string.cancelar_solicitud)) }
             },

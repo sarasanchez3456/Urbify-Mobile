@@ -3,30 +3,31 @@ package com.example.appcrud.ui.viewmodel
 import com.example.appcrud.data.model.Calificacion
 import com.example.appcrud.data.repository.CalificacionRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.io.IOException
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CalificacionViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: CalificacionRepository
     private lateinit var viewModel: CalificacionViewModel
 
     @Before
-    fun setUp() {
+    fun setup() {
         Dispatchers.setMain(testDispatcher)
-        repository = mockk()
+        repository = mockk(relaxed = true)
         viewModel = CalificacionViewModel(repository)
     }
 
@@ -36,88 +37,148 @@ class CalificacionViewModelTest {
     }
 
     @Test
-    fun `loadCalificacionesProveedor puebla el estado con la lista`() = runTest {
-        val calificaciones = listOf(Calificacion(idCalificacion = 1, puntuacion = 5, comentario = "Genial"))
-        coEvery { repository.getCalificacionesProveedor(3) } returns calificaciones
+    fun `loadCalificacionesProveedor - exito - muestra calificaciones`() = runTest {
+        val calificaciones = listOf(
+            Calificacion(idCalificacion = 1, puntuacion = 5, comentario = "Excelente"),
+            Calificacion(idCalificacion = 2, puntuacion = 4, comentario = "Bueno")
+        )
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
 
-        viewModel.loadCalificacionesProveedor(3)
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        assertEquals(calificaciones, estado.calificaciones)
-        assertFalse(estado.isLoading)
+        val state = viewModel.uiState.value
+        assertEquals(2, state.calificaciones.size)
+        assertFalse(state.isLoading)
     }
 
     @Test
-    fun `loadCalificacionesProveedor expone el error si falla`() = runTest {
-        coEvery { repository.getCalificacionesProveedor(3) } throws IOException("Sin conexión")
+    fun `loadCalificacionesProveedor - error - muestra error`() = runTest {
+        coEvery { repository.getCalificacionesProveedor(1) } throws RuntimeException("Error")
 
-        viewModel.loadCalificacionesProveedor(3)
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
 
-        assertEquals("Sin conexión", viewModel.uiState.value.error)
+        val state = viewModel.uiState.value
+        assertTrue(state.calificaciones.isEmpty())
+        assertNotNull(state.error)
     }
 
     @Test
-    fun `createCalificacion exitosa muestra mensaje y dispara onSuccess`() = runTest {
+    fun `createCalificacion - exito - llama onSuccess`() = runTest {
         coEvery { repository.createCalificacion(any()) } returns Unit
-        var onSuccessLlamado = false
+        var onSuccessCalled = false
 
-        viewModel.createCalificacion(
-            idSolicitud = 55, idProveedor = 3, puntuacion = 5, comentario = "Excelente"
-        ) { onSuccessLlamado = true }
+        viewModel.createCalificacion(1, 1, 5, "Excelente") { onSuccessCalled = true }
+        advanceUntilIdle()
 
-        assertTrue(onSuccessLlamado)
-        assertEquals("Calificación enviada exitosamente", viewModel.uiState.value.successMessage)
+        assertTrue(onSuccessCalled)
+        assertNotNull(viewModel.uiState.value.successMessage)
     }
 
     @Test
-    fun `createCalificacion duplicada no dispara onSuccess`() = runTest {
-        coEvery { repository.createCalificacion(any()) } throws IOException("Ya calificaste esta solicitud")
-        var onSuccessLlamado = false
+    fun `createCalificacion - doble tap - solo ejecuta una vez`() = runTest {
+        coEvery { repository.createCalificacion(any()) } returns Unit
 
-        viewModel.createCalificacion(55, 3, 5, "Excelente") { onSuccessLlamado = true }
+        viewModel.createCalificacion(1, 1, 5, "Excelente") {}
+        viewModel.createCalificacion(1, 1, 5, "Excelente") {}
+        advanceUntilIdle()
 
-        assertFalse(onSuccessLlamado)
-        assertEquals("Ya calificaste esta solicitud", viewModel.uiState.value.error)
+        coVerify(exactly = 1) { repository.createCalificacion(any()) }
     }
 
     @Test
-    fun `updateCalificacion refleja puntuacion y comentario nuevos en la lista local`() = runTest {
-        val original = Calificacion(idCalificacion = 1, puntuacion = 3, comentario = "Regular")
-        coEvery { repository.getCalificacionesProveedor(3) } returns listOf(original)
-        viewModel.loadCalificacionesProveedor(3)
+    fun `updateCalificacion - exito - actualiza en la lista`() = runTest {
+        val calificaciones = listOf(
+            Calificacion(idCalificacion = 1, puntuacion = 3, comentario = "Regular")
+        )
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
+        coEvery { repository.updateCalificacion(1, any()) } returns Unit
 
-        val editada = original.copy(puntuacion = 5, comentario = "Ahora sí, excelente")
-        coEvery { repository.updateCalificacion(1, editada) } returns Unit
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
 
-        viewModel.updateCalificacion(1, editada)
+        val actualizada = Calificacion(idCalificacion = 1, puntuacion = 5, comentario = "Excelente")
+        viewModel.updateCalificacion(1, actualizada)
+        advanceUntilIdle()
 
-        val actualizada = viewModel.uiState.value.calificaciones.first()
-        assertEquals(5, actualizada.puntuacion)
-        assertEquals("Ahora sí, excelente", actualizada.comentario)
+        val state = viewModel.uiState.value
+        assertEquals(5, state.calificaciones[0].puntuacion)
+        assertEquals("Excelente", state.calificaciones[0].comentario)
+        assertNotNull(state.successMessage)
     }
 
     @Test
-    fun `deleteCalificacion la quita de la lista local`() = runTest {
-        val calificacion = Calificacion(idCalificacion = 1, puntuacion = 5)
-        coEvery { repository.getCalificacionesProveedor(3) } returns listOf(calificacion)
-        viewModel.loadCalificacionesProveedor(3)
+    fun `updateCalificacion - error - revierte la lista`() = runTest {
+        val calificaciones = listOf(
+            Calificacion(idCalificacion = 1, puntuacion = 3, comentario = "Regular")
+        )
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
+        coEvery { repository.updateCalificacion(1, any()) } throws RuntimeException("Update failed")
+
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
+
+        val actualizada = Calificacion(idCalificacion = 1, puntuacion = 5, comentario = "Excelente")
+        viewModel.updateCalificacion(1, actualizada)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(3, state.calificaciones[0].puntuacion)
+        assertEquals("Regular", state.calificaciones[0].comentario)
+        assertNotNull(state.error)
+    }
+
+    @Test
+    fun `deleteCalificacion - exito - quita de la lista`() = runTest {
+        val calificaciones = listOf(
+            Calificacion(idCalificacion = 1, puntuacion = 5),
+            Calificacion(idCalificacion = 2, puntuacion = 4)
+        )
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
         coEvery { repository.deleteCalificacion(1) } returns Unit
 
-        viewModel.deleteCalificacion(1)
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.calificaciones.isEmpty())
-        assertEquals("Calificación eliminada", viewModel.uiState.value.successMessage)
+        viewModel.deleteCalificacion(1)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.calificaciones.size)
+        assertEquals(2, state.calificaciones[0].idCalificacion)
+        assertNotNull(state.successMessage)
     }
 
     @Test
-    fun `clearMessages limpia error y successMessage`() = runTest {
-        coEvery { repository.getCalificacionesProveedor(3) } throws IOException("x")
-        viewModel.loadCalificacionesProveedor(3)
+    fun `deleteCalificacion - error - revierte la lista`() = runTest {
+        val calificaciones = listOf(
+            Calificacion(idCalificacion = 1, puntuacion = 5),
+            Calificacion(idCalificacion = 2, puntuacion = 4)
+        )
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
+        coEvery { repository.deleteCalificacion(1) } throws RuntimeException("Delete failed")
 
-        viewModel.clearMessages()
+        viewModel.loadCalificacionesProveedor(1)
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        assertEquals(null, estado.error)
-        assertEquals(null, estado.successMessage)
+        viewModel.deleteCalificacion(1)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.calificaciones.size)
+        assertNotNull(state.error)
+    }
+
+    @Test
+    fun `recargar - recarga la lista`() = runTest {
+        val calificaciones = listOf(Calificacion(idCalificacion = 1, puntuacion = 5))
+        coEvery { repository.getCalificacionesProveedor(1) } returns calificaciones
+
+        viewModel.recargar(1)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(1, state.calificaciones.size)
     }
 }

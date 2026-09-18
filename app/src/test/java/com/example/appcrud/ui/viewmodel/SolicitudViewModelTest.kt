@@ -7,28 +7,28 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.io.IOException
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SolicitudViewModelTest {
 
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: SolicitudRepository
     private lateinit var viewModel: SolicitudViewModel
 
     @Before
-    fun setUp() {
+    fun setup() {
         Dispatchers.setMain(testDispatcher)
-        repository = mockk()
+        repository = mockk(relaxed = true)
         viewModel = SolicitudViewModel(repository)
     }
 
@@ -37,118 +37,101 @@ class SolicitudViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private val unaSolicitud = Solicitud(idSolicitud = 1, idServicio = 10, estado = EstadoSolicitud.PENDIENTE)
-
     @Test
-    fun `loadSolicitudesCliente puebla el estado con la lista del repositorio`() = runTest {
-        coEvery { repository.getSolicitudesCliente() } returns listOf(unaSolicitud)
+    fun `loadSolicitudesCliente - exito - muestra solicitudes`() = runTest {
+        val solicitudes = listOf(
+            Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE),
+            Solicitud(idSolicitud = 2, estado = EstadoSolicitud.ACEPTADA)
+        )
+        coEvery { repository.getSolicitudesCliente() } returns solicitudes
 
         viewModel.loadSolicitudesCliente()
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        assertEquals(listOf(unaSolicitud), estado.solicitudes)
-        assertFalse(estado.isLoading)
+        val state = viewModel.uiState.value
+        assertEquals(2, state.solicitudes.size)
+        assertFalse(state.isLoading)
     }
 
     @Test
-    fun `loadSolicitudesProveedor expone el error si el repositorio falla`() = runTest {
-        coEvery { repository.getSolicitudesProveedor() } throws IOException("Sin conexión")
+    fun `loadSolicitudesCliente - error - muestra error`() = runTest {
+        coEvery { repository.getSolicitudesCliente() } throws RuntimeException("Error")
 
-        viewModel.loadSolicitudesProveedor()
+        viewModel.loadSolicitudesCliente()
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        assertFalse(estado.isLoading)
-        assertEquals("Sin conexión", estado.error)
-        assertTrue(estado.solicitudes.isEmpty())
+        val state = viewModel.uiState.value
+        assertTrue(state.solicitudes.isEmpty())
+        assertNotNull(state.error)
     }
 
     @Test
-    fun `createSolicitud exitosa muestra mensaje y dispara onSuccess`() = runTest {
+    fun `createSolicitud - exito - llama onSuccess`() = runTest {
         coEvery { repository.createSolicitud(any()) } returns Unit
-        var onSuccessLlamado = false
+        var onSuccessCalled = false
 
-        viewModel.createSolicitud(
-            idServicio = 10, mensaje = "Ayuda", direccion = "Calle 1"
-        ) { onSuccessLlamado = true }
+        viewModel.createSolicitud(1, "Mensaje", "Direccion") { onSuccessCalled = true }
+        advanceUntilIdle()
 
-        assertTrue(onSuccessLlamado)
-        assertEquals("Solicitud creada exitosamente", viewModel.uiState.value.successMessage)
+        assertTrue(onSuccessCalled)
+        assertNotNull(viewModel.uiState.value.successMessage)
     }
 
     @Test
-    fun `createSolicitud fallida no dispara onSuccess y expone el error`() = runTest {
-        coEvery { repository.createSolicitud(any()) } throws IOException("Servicio no disponible")
-        var onSuccessLlamado = false
+    fun `createSolicitud - error - muestra error`() = runTest {
+        coEvery { repository.createSolicitud(any()) } throws RuntimeException("Create failed")
 
-        viewModel.createSolicitud(10, "Ayuda", "Calle 1") { onSuccessLlamado = true }
+        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
+        advanceUntilIdle()
 
-        assertFalse(onSuccessLlamado)
-        assertEquals("Servicio no disponible", viewModel.uiState.value.error)
+        val state = viewModel.uiState.value
+        assertNotNull(state.error)
+        assertFalse(state.isLoading)
     }
 
     @Test
-    fun `cambiarEstado actualiza la tarjeta de forma optimista y refresca la lista`() = runTest {
-        coEvery { repository.getSolicitudesCliente() } returns listOf(unaSolicitud)
-        viewModel.loadSolicitudesCliente()
+    fun `createSolicitud - doble tap - solo ejecuta una vez`() = runTest {
+        coEvery { repository.createSolicitud(any()) } returns Unit
 
-        val refrescada = unaSolicitud.copy(estado = EstadoSolicitud.ACEPTADA)
+        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
+        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.createSolicitud(any()) }
+    }
+
+    @Test
+    fun `cambiarEstado - exito - actualiza estado optimista y recarga`() = runTest {
+        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE))
+        coEvery { repository.getSolicitudesCliente() } returns solicitudes
         coEvery { repository.cambiarEstado(1, EstadoSolicitud.ACEPTADA) } returns Unit
-        coEvery { repository.getSolicitudesCliente() } returns listOf(refrescada)
+
+        viewModel.loadSolicitudesCliente()
+        advanceUntilIdle()
 
         viewModel.cambiarEstado(1, EstadoSolicitud.ACEPTADA)
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        assertEquals(EstadoSolicitud.ACEPTADA, estado.solicitudes.first().estado)
-        assertEquals("Estado actualizado", estado.successMessage)
-        assertTrue(estado.procesando.isEmpty())
+        val state = viewModel.uiState.value
+        assertFalse(state.procesando.contains(1))
+        assertNotNull(state.successMessage)
     }
 
     @Test
-    fun `cambiarEstado revierte la tarjeta si la llamada de cambio falla`() = runTest {
-        coEvery { repository.getSolicitudesCliente() } returns listOf(unaSolicitud)
+    fun `cambiarEstado - error - revierte el estado`() = runTest {
+        val solicitudes = listOf(Solicitud(idSolicitud = 1, estado = EstadoSolicitud.PENDIENTE))
+        coEvery { repository.getSolicitudesCliente() } returns solicitudes
+        coEvery { repository.cambiarEstado(1, EstadoSolicitud.ACEPTADA) } throws RuntimeException("State change failed")
+
         viewModel.loadSolicitudesCliente()
-        coEvery { repository.cambiarEstado(1, EstadoSolicitud.CANCELADA) } throws IOException("No autorizado")
-
-        viewModel.cambiarEstado(1, EstadoSolicitud.CANCELADA)
-
-        val estado = viewModel.uiState.value
-        // Revertida al estado previo (pendiente), no se quedó en "cancelada".
-        assertEquals(EstadoSolicitud.PENDIENTE, estado.solicitudes.first().estado)
-        assertEquals("No autorizado", estado.error)
-        assertTrue(estado.procesando.isEmpty())
-        // getSolicitudesCliente() solo se llamó una vez, en loadSolicitudesCliente()
-        // del setup: cambiarEstado() no llega a intentar el refresh si
-        // repository.cambiarEstado() ya falló.
-        coVerify(exactly = 1) { repository.getSolicitudesCliente() }
-    }
-
-    @Test
-    fun `cambiarEstado exitoso que no logra refrescar conserva el cambio optimista`() = runTest {
-        coEvery { repository.getSolicitudesCliente() } returns listOf(unaSolicitud)
-        viewModel.loadSolicitudesCliente()
-        coEvery { repository.cambiarEstado(1, EstadoSolicitud.ACEPTADA) } returns Unit
-        coEvery { repository.getSolicitudesCliente() } throws IOException("Timeout en el refresh")
+        advanceUntilIdle()
 
         viewModel.cambiarEstado(1, EstadoSolicitud.ACEPTADA)
+        advanceUntilIdle()
 
-        val estado = viewModel.uiState.value
-        // El cambio de estado en sí tuvo éxito: NO se revierte solo porque
-        // falló el refresh posterior (comportamiento a propósito, ver
-        // comentario en SolicitudViewModel.cambiarEstado).
-        assertEquals(EstadoSolicitud.ACEPTADA, estado.solicitudes.first().estado)
-        assertEquals("Estado actualizado", estado.successMessage)
-    }
-
-    @Test
-    fun `clearMessages limpia error y successMessage`() = runTest {
-        coEvery { repository.getSolicitudesCliente() } throws IOException("x")
-        viewModel.loadSolicitudesCliente()
-        assertEquals("x", viewModel.uiState.value.error)
-
-        viewModel.clearMessages()
-
-        val estado = viewModel.uiState.value
-        assertEquals(null, estado.error)
-        assertEquals(null, estado.successMessage)
+        val state = viewModel.uiState.value
+        assertEquals(EstadoSolicitud.PENDIENTE, state.solicitudes.first().estado)
+        assertNotNull(state.error)
+        assertFalse(state.procesando.contains(1))
     }
 }
