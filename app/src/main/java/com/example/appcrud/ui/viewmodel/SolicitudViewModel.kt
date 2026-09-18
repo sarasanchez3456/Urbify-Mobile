@@ -3,6 +3,7 @@ package com.example.appcrud.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.network.NetworkResult
 import com.example.appcrud.data.repository.SolicitudRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,10 @@ data class SolicitudUiState(
     val solicitudes: List<Solicitud> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val detalle: Solicitud? = null,
+    val detalleIsLoading: Boolean = false,
+    val detalleError: String? = null,
+    val detalleNoEncontrado: Boolean = false,
     val successMessage: String? = null,
     /** Ids de solicitudes con un cambio de estado en curso (spinner por tarjeta). */
     val procesando: Set<Int> = emptySet(),
@@ -37,6 +42,33 @@ class SolicitudViewModel @JvmOverloads constructor(
     fun loadSolicitudesProveedor() {
         esProveedor = true
         cargar { repository.getSolicitudesProveedor() }
+    }
+
+    /** Carga desde repositorio para que el detalle sobreviva a recreaciones de Activity. */
+    fun loadDetalle(idSolicitud: Int, esProveedor: Boolean) {
+        this.esProveedor = esProveedor
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    detalle = null,
+                    detalleIsLoading = true,
+                    detalleError = null,
+                    detalleNoEncontrado = false,
+                )
+            }
+            when (val result = repository.getSolicitudResult(idSolicitud, esProveedor)) {
+                is NetworkResult.Success -> _uiState.update {
+                    it.copy(
+                        detalle = result.data,
+                        detalleIsLoading = false,
+                        detalleNoEncontrado = result.data == null,
+                    )
+                }
+                is NetworkResult.Failure -> _uiState.update {
+                    it.copy(detalleIsLoading = false, detalleError = result.error.message)
+                }
+            }
+        }
     }
 
     private fun cargar(bloque: suspend () -> List<Solicitud>) {
@@ -74,11 +106,15 @@ class SolicitudViewModel @JvmOverloads constructor(
      */
     fun cambiarEstado(id: Int, nuevoEstado: String) {
         val previo = _uiState.value.solicitudes
+        val detallePrevio = _uiState.value.detalle
         viewModelScope.launch {
             _uiState.update { state ->
                 state.copy(
                     procesando = state.procesando + id,
                     error = null,
+                    detalle = state.detalle?.let {
+                        if (it.idSolicitud == id) it.copy(estado = nuevoEstado) else it
+                    },
                     solicitudes = state.solicitudes.map {
                         if (it.idSolicitud == id) it.copy(estado = nuevoEstado) else it
                     },
@@ -97,6 +133,7 @@ class SolicitudViewModel @JvmOverloads constructor(
                 _uiState.update { state ->
                     state.copy(
                         solicitudes = frescas ?: state.solicitudes,
+                        detalle = frescas?.firstOrNull { it.idSolicitud == id } ?: state.detalle,
                         successMessage = "Estado actualizado",
                     )
                 }
@@ -104,6 +141,7 @@ class SolicitudViewModel @JvmOverloads constructor(
                 _uiState.update { state ->
                     state.copy(
                         solicitudes = previo, // Solo revertimos si la llamada cambiarEstado falló
+                        detalle = detallePrevio,
                         error = e.message ?: "No se pudo cambiar el estado",
                     )
                 }

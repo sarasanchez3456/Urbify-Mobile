@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -41,6 +42,8 @@ fun CreateEditServicioScreen(
     var precioTexto by remember { mutableStateOf("") }
     var categoriaSeleccionada by remember { mutableStateOf<com.example.appcrud.data.model.Categoria?>(null) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+    var mostrarNuevaCategoria by remember { mutableStateOf(false) }
+    var nombreNuevaCategoria by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.servicioExistente) {
         uiState.servicioExistente?.let { s ->
@@ -62,6 +65,15 @@ fun CreateEditServicioScreen(
         }
     }
 
+    LaunchedEffect(uiState.categoriaCreada) {
+        uiState.categoriaCreada?.let {
+            categoriaSeleccionada = it
+            mostrarNuevaCategoria = false
+            nombreNuevaCategoria = ""
+            viewModel.consumirCategoriaCreada()
+        }
+    }
+
     val precio = precioTexto.toDoubleOrNull()
     val formOk = titulo.isNotBlank() && categoriaSeleccionada != null
 
@@ -77,6 +89,47 @@ fun CreateEditServicioScreen(
             )
         }
     ) { padding ->
+        if (mostrarNuevaCategoria) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!uiState.isCreatingCategoria) mostrarNuevaCategoria = false
+                },
+                title = { Text("Nueva categoría") },
+                text = {
+                    OutlinedTextField(
+                        value = nombreNuevaCategoria,
+                        onValueChange = { nombreNuevaCategoria = it },
+                        label = { Text("Nombre de la categoría") },
+                        singleLine = true,
+                        enabled = !uiState.isCreatingCategoria,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.crearCategoria(nombreNuevaCategoria) },
+                        enabled = nombreNuevaCategoria.isNotBlank() && !uiState.isCreatingCategoria,
+                    ) {
+                        if (uiState.isCreatingCategoria) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("Agregar")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { mostrarNuevaCategoria = false },
+                        enabled = !uiState.isCreatingCategoria,
+                    ) { Text("Cancelar") }
+                },
+            )
+        }
+
         when {
             uiState.isLoading -> {
                 Box(
@@ -167,6 +220,15 @@ fun CreateEditServicioScreen(
                                     }
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Crear nueva categoría") },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+                                onClick = {
+                                    dropdownExpanded = false
+                                    mostrarNuevaCategoria = true
+                                }
+                            )
                         }
                     }
 

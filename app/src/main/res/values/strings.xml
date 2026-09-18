@@ -133,6 +133,9 @@
 
     <!-- Detalle solicitud -->
     <string name="detalle_solicitud">Detalle de solicitud</string>
+    <string name="solicitud_invalida">La solicitud indicada no es válida.</string>
+    <string name="no_se_pudo_cargar_solicitud">No se pudo cargar la solicitud.</string>
+    <string name="solicitud_no_encontrada">La solicitud ya no existe o no tienes permiso para verla.</string>
     <string name="estas_seguro_cancelar">¿Estás seguro de que quieres cancelar esta solicitud?</string>
     <string name="mantener">Mantener</string>
     <string name="mensaje">Mensaje</string>

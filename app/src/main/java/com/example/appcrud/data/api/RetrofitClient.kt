@@ -1,6 +1,8 @@
 package com.example.appcrud.data.api
 
+import com.example.appcrud.BuildConfig
 import com.example.appcrud.data.session.TokenManager
+import com.example.appcrud.data.session.SessionEvents
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -9,9 +11,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    // 10.0.2.2 = "localhost" del host visto desde el emulador de Android.
-    private const val BASE_URL = "http://10.0.2.2:4000/api/"
-
     private val gson = GsonBuilder()
         .setLenient()
         .create()
@@ -26,11 +25,23 @@ object RetrofitClient {
         } else {
             original
         }
-        chain.proceed(request)
+        val response = chain.proceed(request)
+        // No invalida la sesión por un login fallido; sí por cualquier endpoint
+        // autenticado que el servidor rechace con 401.
+        if (response.code == 401 && !original.url.encodedPath.startsWith("/api/auth/")) {
+            TokenManager.clearTokenSync()
+            SessionEvents.notifyExpired()
+        }
+        response
     }
 
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        // Evita registrar tokens y datos personales en staging/producción.
+        level = if (BuildConfig.ENABLE_HTTP_LOGGING) {
+            HttpLoggingInterceptor.Level.BODY
+        } else {
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake
@@ -49,7 +60,7 @@ object RetrofitClient {
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(httpClient)
             .addConverterFactory(gsonConverter)
             .build()
