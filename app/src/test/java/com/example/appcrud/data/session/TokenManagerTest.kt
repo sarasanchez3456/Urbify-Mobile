@@ -8,7 +8,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -80,6 +82,22 @@ class TokenManagerTest {
         runBlocking { TokenManager.clearTokenFrom(dataStore) }
 
         assertNull(TokenManager.getToken())
+    }
+
+    @Test
+    fun `expiracion 401 limpia el token en memoria y en DataStore`() {
+        val dataStore = newDataStore()
+        initWith(dataStore)
+        runBlocking { TokenManager.saveTokenTo(dataStore, "token-expirado") }
+
+        TokenManager.clearTokenImmediate()
+
+        assertNull("La siguiente request no debe reutilizar el token rechazado", TokenManager.getToken())
+        runBlocking {
+            withTimeout(1_000) {
+                dataStore.data.first { it[tokenKey] == null }
+            }
+        }
     }
 
     @Test
