@@ -58,11 +58,12 @@ class ProveedoresCercanosScreenTest {
 
     @Test
     fun sinPermisoYSinDireccionDePerfil_pideActivarUbicacion() {
+        val viewModel = ProveedoresCercanosViewModel(proveedorRepository)
         composeRule.setContent {
             ProveedoresCercanosScreen(
                 onBack = {},
                 sessionViewModel = sessionViewModel(usuario = null),
-                viewModel = ProveedoresCercanosViewModel(proveedorRepository)
+                viewModel = viewModel
             )
         }
 
@@ -80,11 +81,12 @@ class ProveedoresCercanosScreenTest {
         coEvery { proveedorRepository.getCercanos(4.65, -74.05, 5.0) } returns
             listOf(ProveedorCercano(id = 9, nombre = "Ana", apellido = "Gómez"))
 
+        val viewModel = ProveedoresCercanosViewModel(proveedorRepository)
         composeRule.setContent {
             ProveedoresCercanosScreen(
                 onBack = {},
                 sessionViewModel = sessionViewModel(usuario = usuarioConDireccion),
-                viewModel = ProveedoresCercanosViewModel(proveedorRepository)
+                viewModel = viewModel
             )
         }
 
