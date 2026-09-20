@@ -4,14 +4,14 @@
 
 ```bash
 # Unitarios (JVM, sin emulador, sin backend) — corren en CI en cada PR
-./gradlew testDebugUnitTest
+./gradlew :app:testDevelopmentDebugUnitTest
 
 # Instrumentados (Compose UI) — necesitan un emulador/dispositivo conectado
-./gradlew connectedDebugAndroidTest
+./gradlew :app:connectedDevelopmentDebugAndroidTest
 ```
 
-Los reportes quedan en `app/build/reports/tests/testDebugUnitTest/index.html` y
-`app/build/reports/androidTests/connected/debug/index.html`.
+Los reportes quedan en `app/build/reports/tests/testDevelopmentDebugUnitTest/index.html` y
+`app/build/reports/androidTests/connected/developmentDebug/index.html`.
 
 ## Qué hay y por qué está separado así
 

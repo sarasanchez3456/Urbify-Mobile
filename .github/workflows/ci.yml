@@ -25,8 +25,11 @@ jobs:
       - name: Lint
         run: ./gradlew :app:lint
 
-      - name: Assemble debug
-        run: ./gradlew :app:assembleDebug
+      - name: Assemble development debug
+        run: ./gradlew :app:assembleDevelopmentDebug
+
+      - name: Validar variante de producción
+        run: ./gradlew :app:lintProductionRelease
 
       - name: Subir resultados de tests
         if: always()

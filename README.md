@@ -96,44 +96,51 @@ Al levantar el backend por primera vez la base de datos queda **vacía**: el `sc
 
 ## Configuración de red
 
-### URL base configurada
+### Entornos y URL base de la API
 
-El cliente apunta a `http://10.0.2.2:4000/api/` que es la IP del emulador para acceder a `localhost` del PC host.
+La URL ya no está escrita en Kotlin. Cada variante genera `BuildConfig.API_BASE_URL` desde una propiedad de Gradle. Todas las URLs deben terminar en `/`.
 
-**Si usas dispositivo físico** (no emulador), cambia la `BASE_URL` en `RetrofitClient.kt`:
+| Entorno / variante | Propiedad configurable | Valor predeterminado | Tráfico HTTP |
+|---|---|---|---|
+| Desarrollo (`developmentDebug`) | `DEVELOPMENT_API_BASE_URL` | `http://10.0.2.2:4000/api/` | Permitido, sólo para desarrollo |
+| Staging (`stagingRelease`) | `STAGING_API_BASE_URL` | `https://staging-api.urbify.example/api/` | No permitido; HTTPS obligatorio |
+| Producción (`productionRelease`) | `PRODUCTION_API_BASE_URL` | `https://api.urbify.example/api/` | No permitido; HTTPS obligatorio |
 
-```kotlin
-// app/src/main/java/com/example/appcrud/data/api/RetrofitClient.kt
-private const val BASE_URL = "http://192.168.X.X:4000/api/"
-// Reemplaza con la IP local de tu PC en la red WiFi
+Los dominios `.example` de staging y producción son marcadores seguros: se deben reemplazar por los dominios HTTPS reales antes de distribuir esas variantes. Gradle rechaza una URL sin `/` final y también rechaza HTTP para staging o producción.
+
+#### Desarrollo en emulador
+
+No hace falta configurar nada: ejecuta la variante `developmentDebug`. Su valor predeterminado `10.0.2.2` accede al `localhost` del equipo anfitrión desde el emulador Android.
+
+#### Desarrollo en dispositivo físico
+
+El dispositivo y el equipo que ejecuta el backend deben estar en la misma red. Agrega esta propiedad a `local.properties` (archivo ignorado por Git), usando la IP LAN de tu equipo:
+
+```properties
+DEVELOPMENT_API_BASE_URL=http://192.168.X.X:4000/api/
 ```
 
-Para saber tu IP local:
-- **Windows**: `ipconfig` en la terminal
-- **Mac/Linux**: `ifconfig | grep inet` o `ip addr`
+Obtén la IP con `ipconfig` en Windows o `ip addr` en Linux/macOS. Después sincroniza Gradle y vuelve a compilar `developmentDebug`. No se modifica ningún archivo fuente.
 
-### Error de conexión / Timeout (10000ms) en el Emulador
+Como alternativa para un emulador con redirección ADB, ejecuta `adb reverse tcp:4000 tcp:4000` y compila con `-PDEVELOPMENT_API_BASE_URL=http://127.0.0.1:4000/api/`.
 
-Si el backend está corriendo y funciona en el navegador del PC, pero la app te tira un error como `failed to connect to /10.0.2.2 (port 4000) ... after 10000ms`, se debe a un bloqueo del Firewall de Windows o a la configuración de red IPv6 de Node.js.
+#### Staging y producción
 
-**Solución recomendada (Redirección de Puertos ADB):**
+Configura las URLs HTTPS reales en `gradle.properties` local o en el sistema de CI/CD:
 
-1. Abre la terminal de Android Studio o PowerShell en tu PC.
-2. Redirige el puerto `4000` ejecutando el siguiente comando:
-   ```powershell
-   & "C:\Users\USER\AppData\Local\Android\Sdk\platform-tools\adb.exe" reverse tcp:4000 tcp:4000
-   ```
-3. En la app Android, ve a `RetrofitClient.kt` y cambia la URL base para que use `127.0.0.1` (localhost redirigido):
-   ```kotlin
-   private const val BASE_URL = "http://127.0.0.1:4000/api/"
-   ```
-4. Vuelve a ejecutar la app. Esto se salta las restricciones del Firewall de Windows y conecta de forma directa e instantánea.
+Puedes pasarlas también por línea de comandos, sin persistirlas en el repositorio:
 
+```bash
+./gradlew assembleStagingRelease -PSTAGING_API_BASE_URL=https://staging-api.tudominio.com/api/
+./gradlew assembleProductionRelease -PPRODUCTION_API_BASE_URL=https://api.tudominio.com/api/
+```
+
+Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="false"`. Por ello no aceptan conexiones HTTP, incluso si se configura una URL HTTP por error.
 ### Otros problemas comunes
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
-| `Unable to resolve host` | Backend apagado o URL incorrecta | Verifica que `docker compose up -d` esté corriendo y que la `BASE_URL` sea correcta |
+| `Unable to resolve host` | Backend apagado o URL incorrecta | Verifica que `docker compose up -d` esté corriendo y la propiedad `*_API_BASE_URL` de la variante elegida |
 | Campos vacíos en la app | Versión desactualizada del backend o la app | Actualiza ambos repos y reinicia el backend |
 | `SecurityException` al ver mapa | Permiso de ubicación no concedido | Otorga el permiso en Ajustes → Apps → Urbify → Permisos |
 | Gradle no sincroniza | Versión de JDK incorrecta | Verifica en `File → Project Structure → SDK Location` que el JDK sea 17 |
@@ -379,7 +386,7 @@ Todos los datos de la plataforma se almacenan en la base de datos del backend, *
 | Calificaciones | Base de datos del backend |
 | Categorías | Base de datos del backend |
 
-La app **nunca guarda** esta información localmente. Cada vez que abres una pantalla, los datos se piden al servidor via la API REST (`http://10.0.2.2:4000/api/`). Si el backend no está corriendo, la app no muestra nada.
+La app consulta los datos al servidor mediante la URL de la variante activa (`BuildConfig.API_BASE_URL`). En desarrollo, el valor predeterminado es `http://10.0.2.2:4000/api/`; staging y producción requieren HTTPS. Si el backend no está disponible, la app muestra un estado de error y permite reintentar.
 
 ### En el dispositivo (DataStore)
 
@@ -387,7 +394,7 @@ La app solo guarda dos preferencias locales usando **Jetpack DataStore**:
 
 | Dato | Archivo DataStore | Clave |
 |---|---|---|
-| Token JWT (sesión) | `urbify_session` | `jwt_token` |
+| Token JWT (sesión) | `EncryptedSharedPreferences` protegido por Android Keystore | `jwt_token` |
 | Tema claro/oscuro | `urbify_prefs` | `dark_theme` |
 
 El token JWT permite que la app recuerde tu sesión aunque la cierres. Al hacer "Cerrar sesión" el token se borra del DataStore.
@@ -421,7 +428,7 @@ Los backends Node.js más comunes usan **MongoDB**, **PostgreSQL** o **MySQL**.
 
 Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez que el usuario accede a **Proveedores Cercanos**. Internet es necesario para toda la app (API + tiles del mapa).
 
-> **Nota**: la app declara `android:usesCleartextTraffic="true"` en el `AndroidManifest.xml` para permitir conexiones HTTP (no HTTPS) al backend en `http://10.0.2.2:4000`. Esto es necesario en desarrollo; en producción se recomienda HTTPS.
+> **Nota**: el manifest obtiene `usesCleartextTraffic` de cada flavor. Sólo `development` permite HTTP para el backend local; `staging` y `production` obligan HTTPS.
 
 ---
 

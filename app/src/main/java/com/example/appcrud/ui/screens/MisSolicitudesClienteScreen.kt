@@ -26,7 +26,7 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 @Composable
 fun MisSolicitudesClienteScreen(
     onBack: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onDetalle: (Solicitud, Boolean) -> Unit = { _, _ -> },
     refreshTrigger: Int = 0,
     viewModel: SolicitudViewModel = viewModel()
@@ -153,10 +153,9 @@ private fun SolicitudClienteCard(
     solicitud: Solicitud,
     procesando: Boolean = false,
     onClick: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onCancelar: (Int) -> Unit
 ) {
-    val defaultTituloServicio = stringResource(R.string.servicio_label)
     val estadoColor = when (solicitud.estado) {
         EstadoSolicitud.PENDIENTE -> MaterialTheme.colorScheme.secondary
         EstadoSolicitud.ACEPTADA -> MaterialTheme.colorScheme.tertiary
@@ -238,8 +237,7 @@ private fun SolicitudClienteCard(
                     onClick = {
                         onCalificar(
                             solicitud.idSolicitud,
-                            solicitud.idProveedor,
-                            solicitud.tituloServicio ?: defaultTituloServicio
+                            solicitud.idProveedor
                         )
                     },
                     enabled = !procesando,

@@ -24,7 +24,6 @@ import com.example.appcrud.ui.viewmodel.CalificacionViewModel
 @Composable
 fun HistorialCalificacionesScreen(
     proveedorId: Int,
-    nombreProveedor: String,
     clienteId: Int? = null,
     onBack: () -> Unit,
     refreshTrigger: Int = 0,

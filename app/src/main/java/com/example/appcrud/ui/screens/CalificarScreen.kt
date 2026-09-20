@@ -22,7 +22,6 @@ import com.example.appcrud.ui.viewmodel.CalificacionViewModel
 fun CalificarScreen(
     idSolicitud: Int,
     idProveedor: Int,
-    tituloServicio: String,
     onBack: () -> Unit,
     onSuccess: () -> Unit,
     viewModel: CalificacionViewModel = viewModel()
@@ -69,7 +68,7 @@ fun CalificarScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = tituloServicio,
+                        text = "Comparte tu experiencia con el servicio",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )

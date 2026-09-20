@@ -4,6 +4,8 @@ import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.network.NetworkResult
+import com.example.appcrud.data.network.safeNetworkCall
 
 class SolicitudRepository(private val api: ApiService = RetrofitClient.apiService) {
 
@@ -18,6 +20,15 @@ class SolicitudRepository(private val api: ApiService = RetrofitClient.apiServic
     suspend fun getSolicitudesProveedor(): List<Solicitud> {
         return api.getSolicitudesProveedor()
     }
+
+    /** El backend expone las solicitudes por rol, no un endpoint individual. */
+    suspend fun getSolicitud(idSolicitud: Int, esProveedor: Boolean): Solicitud? {
+        val solicitudes = if (esProveedor) getSolicitudesProveedor() else getSolicitudesCliente()
+        return solicitudes.firstOrNull { it.idSolicitud == idSolicitud }
+    }
+
+    suspend fun getSolicitudResult(idSolicitud: Int, esProveedor: Boolean): NetworkResult<Solicitud?> =
+        safeNetworkCall { getSolicitud(idSolicitud, esProveedor) }
 
     suspend fun cambiarEstado(id: Int, estado: String) {
         api.cambiarEstadoSolicitud(id, EstadoUpdateRequest(estado))
