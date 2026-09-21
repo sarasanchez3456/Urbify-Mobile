@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Calificacion
 import com.example.appcrud.data.repository.CalificacionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,7 @@ class CalificacionViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Error al cargar calificaciones"
+                        error = e.aMensajeUsuario()
                     )
                 }
             }
@@ -72,7 +73,7 @@ class CalificacionViewModel @JvmOverloads constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Error al enviar calificación"
+                        error = e.aMensajeUsuario()
                     )
                 }
             }
@@ -102,7 +103,7 @@ class CalificacionViewModel @JvmOverloads constructor(
                     it.copy(
                         calificaciones = previo,
                         isLoading = false,
-                        error = e.message ?: "Error al actualizar calificación"
+                        error = e.aMensajeUsuario()
                     )
                 }
             }
@@ -128,7 +129,7 @@ class CalificacionViewModel @JvmOverloads constructor(
                     it.copy(
                         calificaciones = previo,
                         isLoading = false,
-                        error = e.message ?: "Error al eliminar calificación"
+                        error = e.aMensajeUsuario()
                     )
                 }
             }

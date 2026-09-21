@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Usuario
 import com.example.appcrud.data.session.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,7 @@ class SessionViewModel @JvmOverloads constructor(
                 val perfil = api.getPerfil()
                 _state.value = SessionState(usuario = perfil)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(isLoading = false, error = e.message)
+                _state.value = _state.value.copy(isLoading = false, error = e.aMensajeUsuario())
             }
         }
     }
@@ -55,7 +56,7 @@ class SessionViewModel @JvmOverloads constructor(
                 api.updatePerfil(actualizado)
                 _state.value = SessionState(usuario = actualizado, updateSuccess = true)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(isLoading = false, error = e.message)
+                _state.value = _state.value.copy(isLoading = false, error = e.aMensajeUsuario())
             }
         }
     }
@@ -71,7 +72,7 @@ class SessionViewModel @JvmOverloads constructor(
             } catch (e: Exception) {
                 _state.value = _state.value.copy(
                     usuario = _state.value.usuario?.copy(disponible = actual.disponible),
-                    error = e.message ?: "No se pudo cambiar la disponibilidad",
+                    error = e.aMensajeUsuario(),
                 )
             }
         }
@@ -86,5 +87,14 @@ class SessionViewModel @JvmOverloads constructor(
             TokenManager.clearToken(getApplication())
             _state.value = SessionState()
         }
+    }
+
+    /**
+     * Limpia el estado de sesión en memoria sin volver a tocar el token.
+     * Se usa cuando la sesión ya se invalidó en otro lado, por ejemplo tras
+     * un 401 manejado por el interceptor de Retrofit.
+     */
+    fun clearLocalSession() {
+        _state.value = SessionState()
     }
 }

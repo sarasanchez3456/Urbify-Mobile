@@ -35,13 +35,12 @@ object RetrofitClient {
         response
     }
 
+    internal fun httpLoggingLevel(isLoggingEnabled: Boolean): HttpLoggingInterceptor.Level =
+        if (isLoggingEnabled) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+
     private val logging = HttpLoggingInterceptor().apply {
-        // Evita registrar tokens y datos personales en staging/producción.
-        level = if (BuildConfig.ENABLE_HTTP_LOGGING) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
+        // En desarrollo evita registrar headers y cuerpos; los otros entornos no registran red.
+        level = httpLoggingLevel(BuildConfig.ENABLE_HTTP_LOGGING)
     }
 
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake

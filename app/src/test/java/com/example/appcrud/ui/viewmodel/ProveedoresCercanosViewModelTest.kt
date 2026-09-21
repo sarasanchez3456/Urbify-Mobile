@@ -1,5 +1,7 @@
 package com.example.appcrud.ui.viewmodel
 
+import com.example.appcrud.data.api.aMensajeUsuario
+
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.data.repository.ProveedorRepository
 import io.mockk.coEvery
@@ -57,7 +59,7 @@ class ProveedoresCercanosViewModelTest {
 
         val estado = viewModel.uiState.value
         assertFalse(estado.isLoading)
-        assertEquals("Sin conexión", estado.error)
+        assertEquals(IOException("Sin conexion").aMensajeUsuario(), estado.error)
         assertEquals(emptyList<ProveedorCercano>(), estado.proveedores)
     }
 

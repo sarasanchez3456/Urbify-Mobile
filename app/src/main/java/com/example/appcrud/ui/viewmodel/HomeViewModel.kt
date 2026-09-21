@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Servicio
@@ -65,7 +66,7 @@ class HomeViewModel : ViewModel() {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Error al cargar la información",
+                        error = e.aMensajeUsuario(),
                     )
                 }
             }

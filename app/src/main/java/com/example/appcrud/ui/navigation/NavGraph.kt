@@ -132,6 +132,7 @@ fun AppNavGraph(
             composable(Routes.LOGIN) {
                 AuthScreen(
                     onAuthSuccess = { usuario ->
+                        SessionEvents.markSessionActive()
                         sessionViewModel.setSession(usuario)
                         navController.navigate(Routes.HOME) {
                             // popUpTo(0) limpia TODA la pila y los estados guardados,
@@ -346,7 +347,7 @@ fun AppNavGraph(
                 )
             }
 
-            // ── Servicios del proveedor ──────────────────────────────────────
+            // â”€â”€ Servicios del proveedor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
             composable(Routes.MIS_SERVICIOS) {
                 MisServiciosScreen(
@@ -381,7 +382,7 @@ fun AppNavGraph(
                 )
             }
 
-            // ── Detalle de solicitud ─────────────────────────────────────────
+            // â”€â”€ Detalle de solicitud â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
             composable(
                 route = Routes.DETALLE_SOLICITUD,

@@ -6,8 +6,8 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Excluye el DataStore de sesión: contiene el token JWT y no debe
+         quedar incluido en copias de seguridad en dispositivos anteriores
+         a Android 12. -->
+    <exclude domain="file" path="datastore/urbify_session.preferences_pb" />
 </full-backup-content>

@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.repository.ServicioRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +34,7 @@ class MisServiciosViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al cargar servicios"
+                    error = e.aMensajeUsuario()
                 )
             }
         }
@@ -55,7 +56,7 @@ class MisServiciosViewModel(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isEliminando = false,
-                    error = e.message ?: "Error al eliminar servicio"
+                    error = e.aMensajeUsuario()
                 )
             }
         }

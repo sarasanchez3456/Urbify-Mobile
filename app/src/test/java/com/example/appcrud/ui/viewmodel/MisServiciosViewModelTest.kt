@@ -1,5 +1,7 @@
 package com.example.appcrud.ui.viewmodel
 
+import com.example.appcrud.data.api.aMensajeUsuario
+
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.repository.ServicioRepository
 import io.mockk.coEvery
@@ -63,7 +65,7 @@ class MisServiciosViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.servicios.isEmpty())
         assertFalse(state.isLoading)
-        assertEquals("Network error", state.error)
+        assertEquals(RuntimeException("Network error").aMensajeUsuario(), state.error)
     }
 
     @Test

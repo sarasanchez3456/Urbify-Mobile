@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.network.NetworkResult
 import com.example.appcrud.data.repository.SolicitudRepository
@@ -79,7 +80,7 @@ class SolicitudViewModel @JvmOverloads constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "Error al cargar solicitudes",
+                    error = e.aMensajeUsuario(),
                 )
             }
         }
@@ -94,7 +95,7 @@ class SolicitudViewModel @JvmOverloads constructor(
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")
                 onSuccess()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "Error al crear solicitud")
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.aMensajeUsuario())
             }
         }
     }
@@ -142,7 +143,7 @@ class SolicitudViewModel @JvmOverloads constructor(
                     state.copy(
                         solicitudes = previo, // Solo revertimos si la llamada cambiarEstado falló
                         detalle = detallePrevio,
-                        error = e.message ?: "No se pudo cambiar el estado",
+                        error = e.aMensajeUsuario(),
                     )
                 }
             } finally {

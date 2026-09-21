@@ -1,5 +1,7 @@
 package com.example.appcrud.ui.viewmodel
 
+import com.example.appcrud.data.api.aMensajeUsuario
+
 import android.app.Application
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.edit
@@ -104,7 +106,7 @@ class SessionViewModelTest {
 
         val estado = viewModel.state.value
         assertFalse(estado.isLoading)
-        assertEquals("401 no autorizado", estado.error)
+        assertEquals(IOException("401 no autorizado").aMensajeUsuario(), estado.error)
         assertNull(estado.usuario)
     }
 
@@ -129,7 +131,7 @@ class SessionViewModelTest {
 
         val estado = viewModel.state.value
         assertFalse(estado.updateSuccess)
-        assertEquals("Sin conexión", estado.error)
+        assertEquals(IOException("Sin conexion").aMensajeUsuario(), estado.error)
     }
 
     @Test
@@ -146,7 +148,7 @@ class SessionViewModelTest {
         // estado FINAL: revertido, con el error visible.
         val estado = awaitState { it.error != null }
         assertEquals(false, estado.usuario?.disponible)
-        assertEquals("Sin conexión", estado.error)
+        assertEquals(IOException("Sin conexion").aMensajeUsuario(), estado.error)
     }
 
     @Test

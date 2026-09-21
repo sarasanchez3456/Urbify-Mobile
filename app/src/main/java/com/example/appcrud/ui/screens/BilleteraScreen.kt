@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.appcrud.R
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.repository.SolicitudRepository
@@ -33,14 +34,13 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
     var completadas by remember { mutableStateOf<List<Solicitud>>(emptyList()) }
     var cargando by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    val defaultError = stringResource(R.string.no_se_pudo_cargar_billetera)
 
     LaunchedEffect(Unit) {
         try {
             completadas = SolicitudRepository().getSolicitudesProveedor()
                 .filter { it.estado == EstadoSolicitud.COMPLETADA }
         } catch (e: Exception) {
-            error = e.message ?: defaultError
+            error = e.aMensajeUsuario()
         } finally {
             cargando = false
         }

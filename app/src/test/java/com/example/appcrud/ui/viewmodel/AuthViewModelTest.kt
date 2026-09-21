@@ -1,5 +1,7 @@
 package com.example.appcrud.ui.viewmodel
 
+import com.example.appcrud.data.api.aMensajeUsuario
+
 import android.app.Application
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.example.appcrud.data.model.AuthResponse
@@ -140,7 +142,7 @@ class AuthViewModelTest {
 
         val estado = viewModel.uiState.value
         assertFalse(estado.isLoading)
-        assertEquals("Failed to connect", estado.error)
+        assertEquals(IOException("Failed to connect").aMensajeUsuario(), estado.error)
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.example.appcrud.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
@@ -59,7 +60,7 @@ class ProveedorHomeViewModel : ViewModel() {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = e.message ?: "Error al cargar el panel",
+                        error = e.aMensajeUsuario(),
                     )
                 }
             }
@@ -77,7 +78,7 @@ class ProveedorHomeViewModel : ViewModel() {
                 )
                 cargar(null)
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message ?: "No se pudo actualizar la solicitud") }
+                _uiState.update { it.copy(error = e.aMensajeUsuario()) }
             } finally {
                 _uiState.update { it.copy(procesando = it.procesando - idSolicitud) }
             }

@@ -101,14 +101,14 @@ object TokenManager {
 
     internal suspend fun saveTokenTo(dataStore: DataStore<Preferences>, token: String) {
         testDataStore = dataStore
-        _state.value = TokenState.Ready(token)
         dataStore.edit { it[legacyTokenKey] = token }
+        _state.value = TokenState.Ready(token)
     }
 
     internal suspend fun clearTokenFrom(dataStore: DataStore<Preferences>) {
         testDataStore = dataStore
-        _state.value = TokenState.Ready(null)
         dataStore.edit { it.remove(legacyTokenKey) }
+        _state.value = TokenState.Ready(null)
     }
 
     private fun ensureInitialized(context: Context) {
