@@ -39,7 +39,7 @@ class ProveedoresCercanosViewModelTest {
 
     @Test
     fun `cargar exitoso puebla la lista y guarda lat-lng`() = runTest {
-        val proveedores = listOf(ProveedorCercano(id = 1, nombre = "Ana", apellido = "GÃƒÂ³mez"))
+        val proveedores = listOf(ProveedorCercano(id = 1, nombre = "Ana", apellido = "Gómez"))
         coEvery { repository.getCercanos(4.65, -74.05, 5.0) } returns proveedores
 
         viewModel.cargar(4.65, -74.05)
@@ -53,7 +53,7 @@ class ProveedoresCercanosViewModelTest {
 
     @Test
     fun `cargar con error de red expone el mensaje sin proveedores`() = runTest {
-        coEvery { repository.getCercanos(any(), any(), any()) } throws IOException("Sin conexiÃƒÂ³n")
+        coEvery { repository.getCercanos(any(), any(), any()) } throws IOException("Sin conexión")
 
         viewModel.cargar(4.65, -74.05)
 
@@ -69,7 +69,7 @@ class ProveedoresCercanosViewModelTest {
         viewModel.cargar(4.65, -74.05)
 
         coEvery { repository.getCercanos(4.65, -74.05, 10.0) } returns
-            listOf(ProveedorCercano(id = 2, nombre = "Beto", apellido = "PÃƒÂ©rez"))
+            listOf(ProveedorCercano(id = 2, nombre = "Beto", apellido = "Pérez"))
 
         viewModel.setRadio(10.0)
 

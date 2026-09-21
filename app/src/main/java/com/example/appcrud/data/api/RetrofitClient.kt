@@ -26,7 +26,7 @@ object RetrofitClient {
             original
         }
         val response = chain.proceed(request)
-        // No invalida la sesiÃ³n por un login fallido; sÃ­ por cualquier endpoint
+        // No invalida la sesión por un login fallido; sí por cualquier endpoint
         // autenticado que el servidor rechace con 401.
         if (response.code == 401 && !original.url.encodedPath.startsWith("/api/auth/")) {
             TokenManager.clearTokenSync()
@@ -43,10 +43,10 @@ object RetrofitClient {
         level = httpLoggingLevel(BuildConfig.ENABLE_HTTP_LOGGING)
     }
 
-    // Nota: se eliminÃ³ el "charsetInterceptor" que intentaba reparar mojibake
-    // re-decodificando el cuerpo como ISO-8859-1. CorrompÃ­a cualquier carÃ¡cter
-    // fuera de latin-1 (emojis, â‚¬, â€“) y se disparaba con texto legÃ­timo que
-    // contuviera "Ãƒ". El backend ya sirve UTF-8 correcto (schema.sql con
+    // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake
+    // re-decodificando el cuerpo como ISO-8859-1. Corrompía cualquier carácter
+    // fuera de latin-1 (emojis, €, –) y se disparaba con texto legítimo que
+    // contuviera "Ã". El backend ya sirve UTF-8 correcto (schema.sql con
     // `SET NAMES utf8mb4` y datos reparados).
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)

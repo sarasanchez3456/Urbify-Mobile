@@ -32,7 +32,7 @@ class SolicitudViewModel @JvmOverloads constructor(
     private val _uiState = MutableStateFlow(SolicitudUiState())
     val uiState: StateFlow<SolicitudUiState> = _uiState.asStateFlow()
 
-    // QuÃ© lista recargar tras un cambio de estado.
+    // Qué lista recargar tras un cambio de estado.
     private var esProveedor = false
 
     fun loadSolicitudesCliente() {
@@ -123,9 +123,9 @@ class SolicitudViewModel @JvmOverloads constructor(
             }
             try {
                 repository.cambiarEstado(id, nuevoEstado)
-                // Si la API tuvo Ã©xito, intentamos refrescar la lista completa para traer
+                // Si la API tuvo éxito, intentamos refrescar la lista completa para traer
                 // otros campos actualizados (como fechas o logs), pero si el refresco
-                // falla, NO revertimos el estado de la UI porque el cambio ya se persistiÃ³.
+                // falla, NO revertimos el estado de la UI porque el cambio ya se persistió.
                 val frescas = runCatching {
                     if (esProveedor) repository.getSolicitudesProveedor()
                     else repository.getSolicitudesCliente()
@@ -141,7 +141,7 @@ class SolicitudViewModel @JvmOverloads constructor(
             } catch (e: Exception) {
                 _uiState.update { state ->
                     state.copy(
-                        solicitudes = previo, // Solo revertimos si la llamada cambiarEstado fallÃ³
+                        solicitudes = previo, // Solo revertimos si la llamada cambiarEstado falló
                         detalle = detallePrevio,
                         error = e.aMensajeUsuario(),
                     )

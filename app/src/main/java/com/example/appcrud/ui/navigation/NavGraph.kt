@@ -77,11 +77,11 @@ fun AppNavGraph(
     onToggleDarkTheme: () -> Unit = {},
     isDarkTheme: Boolean = false
 ) {
-    // Scoped to the Activity â€” shared across all destinations
+    // Scoped to the Activity — shared across all destinations
     val sessionViewModel: SessionViewModel = viewModel()
     val sessionState by sessionViewModel.state.collectAsState()
 
-    // Refresh triggers â€” increment after mutations to force list reload
+    // Refresh triggers — increment after mutations to force list reload
     var serviciosRefresh by remember { mutableIntStateOf(0) }
     var solicitudesRefresh by remember { mutableIntStateOf(0) }
     var calificacionesRefresh by remember { mutableIntStateOf(0) }
@@ -109,7 +109,7 @@ fun AppNavGraph(
                     onNavigate = { route ->
                         if (route == Routes.HOME) {
                             // "Inicio": vuelve limpio a la home, sin depender de
-                            // restoreState (que podÃ­a dejar la pantalla congelada).
+                            // restoreState (que podía dejar la pantalla congelada).
                             navController.popBackStack(Routes.HOME, inclusive = false)
                         } else {
                             val resolvedRoute = if (route == Routes.CATALOGO) Routes.catalogo() else route
@@ -136,8 +136,8 @@ fun AppNavGraph(
                         sessionViewModel.setSession(usuario)
                         navController.navigate(Routes.HOME) {
                             // popUpTo(0) limpia TODA la pila y los estados guardados,
-                            // asÃ­ un re-login (p.ej. con otro rol) no arrastra pantallas
-                            // ni ViewModels de la sesiÃ³n anterior.
+                            // así un re-login (p.ej. con otro rol) no arrastra pantallas
+                            // ni ViewModels de la sesión anterior.
                             popUpTo(0) { inclusive = true }
                         }
                     }
@@ -154,8 +154,8 @@ fun AppNavGraph(
 
                 val usuarioSesion = sessionState.usuario
                 if (usuarioSesion == null) {
-                    // SesiÃ³n perdida (muerte del proceso / recreaciÃ³n del ViewModel).
-                    // Rehidratamos con el token guardado; si no es vÃ¡lido, a LOGIN.
+                    // Sesión perdida (muerte del proceso / recreación del ViewModel).
+                    // Rehidratamos con el token guardado; si no es válido, a LOGIN.
                     LaunchedEffect(Unit) { sessionViewModel.cargarPerfil() }
                     LaunchedEffect(sessionState.error) {
                         if (sessionState.error != null) {
