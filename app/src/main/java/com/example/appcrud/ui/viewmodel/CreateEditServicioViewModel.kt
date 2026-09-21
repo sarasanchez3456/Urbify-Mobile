@@ -18,6 +18,8 @@ data class CreateEditServicioUiState(
     val categorias: List<Categoria> = emptyList(),
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val isCreatingCategoria: Boolean = false,
+    val categoriaCreada: Categoria? = null,
     val error: String? = null,
     val success: Boolean = false
 )
@@ -94,6 +96,54 @@ class CreateEditServicioViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    /** Crea una categoría disponible para el servicio y la selecciona desde la UI. */
+    fun crearCategoria(nombre: String) {
+        val nombreNormalizado = nombre.trim()
+        if (nombreNormalizado.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Escribe un nombre para la categoría")
+            return
+        }
+
+        val existente = _uiState.value.categorias.firstOrNull {
+            it.nombre.equals(nombreNormalizado, ignoreCase = true)
+        }
+        if (existente != null) {
+            _uiState.value = _uiState.value.copy(categoriaCreada = existente, error = null)
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isCreatingCategoria = true,
+                error = null,
+                categoriaCreada = null,
+            )
+            try {
+                categoriaRepository.createCategoria(Categoria(nombre = nombreNormalizado))
+                val categoriasActualizadas = categoriaRepository.getCategorias()
+                val creada = categoriasActualizadas.firstOrNull {
+                    it.nombre.equals(nombreNormalizado, ignoreCase = true)
+                }
+                _uiState.value = _uiState.value.copy(
+                    categorias = categoriasActualizadas,
+                    isCreatingCategoria = false,
+                    categoriaCreada = creada,
+                    error = if (creada == null) "La categoría se creó, pero no pudo seleccionarse"
+                    else null,
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isCreatingCategoria = false,
+                    error = e.message ?: "No se pudo crear la categoría",
+                )
+            }
+        }
+    }
+
+    fun consumirCategoriaCreada() {
+        _uiState.value = _uiState.value.copy(categoriaCreada = null)
     }
 
     fun clearError() {

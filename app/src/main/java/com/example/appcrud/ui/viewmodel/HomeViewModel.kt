@@ -72,4 +72,6 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
+
+    fun recargar() = cargarDatos()
 }

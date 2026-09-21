@@ -1,3 +1,229 @@
 <resources>
     <string name="app_name">Urbify</string>
+
+    <!-- Auth -->
+    <string name="urbify">URBIFY</string>
+    <string name="servicios_urbanos">Servicios urbanos</string>
+    <string name="iniciar_sesion">Iniciar sesión</string>
+    <string name="registrarse">Registrarse</string>
+    <string name="correo_electronico">Correo electrónico</string>
+    <string name="contraseña">Contraseña</string>
+    <string name="contraseña_min">Contraseña (mín. 6)</string>
+    <string name="formato_correo_invalido">Formato de correo inválido</string>
+    <string name="nombre">Nombre</string>
+    <string name="apellido">Apellido</string>
+    <string name="telefono">Teléfono</string>
+    <string name="direccion">Dirección</string>
+    <string name="tipo_cuenta">Tipo de cuenta</string>
+    <string name="cliente">Cliente</string>
+    <string name="proveedor">Proveedor</string>
+    <string name="oficio">Oficio</string>
+    <string name="crear_cuenta">Crear cuenta</string>
+    <string name="cuenta_bloqueada">Cuenta bloqueada temporalmente</string>
+    <string name="intentar_de_nuevo">Intenta de nuevo en %1$d minuto%2$s</string>
+
+    <!-- Home - Cliente -->
+    <string name="hola">Hola,</string>
+    <string name="elige_tu_direccion">Elige tu dirección</string>
+    <string name="encuentra_servicio">Encuentra el servicio que necesitas</string>
+    <string name="que_servicio_necesitas">¿Qué servicio necesitas hoy?</string>
+    <string name="notificaciones">Notificaciones</string>
+    <string name="cambiar_direccion">Cambiar dirección</string>
+    <string name="categorias">Categorías</string>
+    <string name="ver_todo">Ver todo</string>
+    <string name="ver_todos">Ver todos</string>
+    <string name="ver_todas">Ver todas</string>
+    <string name="explora_mapa">Explora el mapa</string>
+    <string name="encuentra_proveedores_cerca">Encuentra proveedores cerca de ti</string>
+    <string name="servicios_destacados">Servicios destacados</string>
+    <string name="no_hay_servicios_destacados">Aún no hay servicios destacados.</string>
+    <string name="mis_solicitudes">Mis solicitudes</string>
+    <string name="no_tienes_solicitudes_activas">No tienes solicitudes activas.</string>
+    <string name="cuando_hagas_solicitud">Cuando hagas una solicitud, podrás ver el estado aquí.</string>
+    <string name="buscando_proveedor">Buscando proveedor</string>
+    <string name="tus_favoritos">Tus favoritos</string>
+    <string name="no_tienes_servicios_guardados">Aún no tienes servicios guardados.</string>
+    <string name="guarda_servicios_favoritos">Guarda tus servicios favoritos para acceder más rápido.</string>
+    <string name="explorar_servicios">Explorar servicios</string>
+    <string name="filtros">Filtros</string>
+    <string name="desde_precio">Desde %1$s</string>
+
+    <!-- Home - Proveedor -->
+    <string name="tu_trabajo_ciudad">Tu trabajo hace la ciudad más bonita</string>
+    <string name="disponible_trabajar">Disponible para trabajar</string>
+    <string name="clientes_pueden_enviar">Los clientes pueden enviarte solicitudes</string>
+    <string name="nuevas_solicitudes">Nuevas solicitudes</string>
+    <string name="solicitudes_nuevas">Solicitudes nuevas</string>
+    <string name="activos">Activos</string>
+    <string name="calificacion">Calificación</string>
+    <string name="trabajos_activos">Trabajos activos</string>
+    <string name="no_tienes_solicitudes_nuevas">No tienes solicitudes nuevas.</string>
+    <string name="cuando_clientes_envien">Cuando los clientes te envíen una solicitud, la verás aquí.</string>
+    <string name="aun_no_trabajos_activos">Aún no tienes trabajos activos.</string>
+    <string name="cuando_aceptes_solicitud">Cuando aceptes una solicitud, podrás ver el progreso aquí.</string>
+    <string name="gestionar_mis_servicios">Gestionar mis servicios</string>
+    <string name="aceptar">Aceptar</string>
+    <string name="rechazar">Rechazar</string>
+    <string name="en_curso">En curso</string>
+    <string name="agendado">Agendado</string>
+    <string name="pendiente">Pendiente</string>
+
+    <!-- Perfil -->
+    <string name="mi_perfil">Mi perfil</string>
+    <string name="volver">Volver</string>
+    <string name="editar">Editar</string>
+    <string name="no_hay_sesion_activa">No hay sesión activa</string>
+    <string name="cerrar_sesion">Cerrar sesión</string>
+    <string name="proveedor_rol">Proveedor</string>
+    <string name="administrador">Administrador</string>
+    <string name="cliente_rol">Cliente</string>
+    <string name="telefono_campo">Teléfono</string>
+    <string name="direccion_campo">Dirección</string>
+    <string name="oficio_campo">Oficio</string>
+    <string name="guardar_cambios">Guardar cambios</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="perfil_actualizado">Perfil actualizado correctamente</string>
+
+    <!-- Catálogo -->
+    <string name="buscar_servicios">Buscar servicios…</string>
+    <string name="limpiar">Limpiar</string>
+    <string name="algo_sallo_mal">Algo salió mal</string>
+    <string name="reintentar">Reintentar</string>
+    <string name="no_hay_servicios">No hay servicios</string>
+    <string name="categoria_sin_servicios">Esta categoría no tiene servicios disponibles</string>
+    <string name="no_encontraron_servicios">No se encontraron servicios</string>
+    <string name="intentar_otro_termino">Intenta con otro término de búsqueda</string>
+    <string name="calificacion_label">Calificación</string>
+
+    <!-- Crear / Editar servicio -->
+    <string name="editar_servicio">Editar servicio</string>
+    <string name="nuevo_servicio">Nuevo servicio</string>
+    <string name="titulo_servicio">Título del servicio *</string>
+    <string name="descripcion">Descripción</string>
+    <string name="precio_opcional">Precio (opcional)</string>
+    <string name="categoria">Categoría *</string>
+    <string name="publicar_servicio">Publicar servicio</string>
+
+    <!-- Mis servicios -->
+    <string name="mis_servicios">Mis servicios</string>
+    <string name="eliminar_servicio">Eliminar servicio</string>
+    <string name="eliminar_servicio_pregunta">¿Eliminar \"%1$s\"? Esta acción no se puede deshacer.</string>
+    <string name="eliminar">Eliminar</string>
+    <string name="aun_no_tienes_servicios">Aún no tienes servicios</string>
+    <string name="crea_primer_servicio">Crea tu primer servicio para que los clientes puedan encontrarte</string>
+    <string name="crear_servicio">Crear servicio</string>
+
+    <!-- Solicitudes - Proveedor -->
+    <string name="solicitudes_recibidas">Solicitudes Recibidas</string>
+    <string name="no_tienes_solicitudes_recibidas">No tienes solicitudes recibidas</string>
+    <string name="solicitudes_clientes_apareceran">Las solicitudes de clientes aparecerán aquí</string>
+    <string name="iniciar_trabajo">Iniciar trabajo</string>
+    <string name="marcar_completado">Marcar como completado</string>
+
+    <!-- Solicitudes - Cliente -->
+    <string name="solicitudes">Solicitudes</string>
+    <string name="mis_solicitudes_chip">Mis solicitudes</string>
+    <string name="recibidas">Recibidas</string>
+    <string name="no_tienes_solicitudes">No tienes solicitudes aún</string>
+    <string name="crea_solicitud_catalogo">Crea una solicitud desde el catálogo</string>
+    <string name="proveedor_label">Proveedor: %1$s</string>
+    <string name="cliente_label">Cliente: %1$s</string>
+    <string name="calificar_servicio">Calificar servicio</string>
+    <string name="cancelar_solicitud">Cancelar solicitud</string>
+
+    <!-- Detalle solicitud -->
+    <string name="detalle_solicitud">Detalle de solicitud</string>
+    <string name="solicitud_invalida">La solicitud indicada no es válida.</string>
+    <string name="no_se_pudo_cargar_solicitud">No se pudo cargar la solicitud.</string>
+    <string name="solicitud_no_encontrada">La solicitud ya no existe o no tienes permiso para verla.</string>
+    <string name="estas_seguro_cancelar">¿Estás seguro de que quieres cancelar esta solicitud?</string>
+    <string name="mantener">Mantener</string>
+    <string name="mensaje">Mensaje</string>
+    <string name="fecha">Fecha</string>
+
+    <!-- Nueva solicitud -->
+    <string name="nueva_solicitud">Nueva Solicitud</string>
+    <string name="servicio_label">Servicio</string>
+    <string name="mensaje_descripcion">Mensaje / Descripción del trabajo</string>
+    <string name="direccion_servicio">Dirección del servicio</string>
+    <string name="enviar_solicitud">Enviar Solicitud</string>
+
+    <!-- Calificar -->
+    <string name="calificar_servicio_title">Calificar servicio</string>
+    <string name="servicio_completado">Servicio completado</string>
+    <string name="como_fue_experiencia">¿Cómo fue tu experiencia?</string>
+    <string name="estrellas">%1$d estrellas</string>
+    <string name="malo">Malo</string>
+    <string name="regular">Regular</string>
+    <string name="bueno">Bueno</string>
+    <string name="muy_bueno">Muy bueno</string>
+    <string name="excelente">Excelente</string>
+    <string name="comentario_opcional">Comentario (opcional)</string>
+    <string name="enviar_calificacion">Enviar calificación</string>
+
+    <!-- Historial calificaciones -->
+    <string name="calificaciones_title">Calificaciones</string>
+    <string name="opiniones">Opiniones (%1$d)</string>
+    <string name="eliminar_calificacion">Eliminar calificación</string>
+    <string name="seguro_eliminar_calificacion">¿Estás seguro de que quieres eliminar esta calificación?</string>
+    <string name="editar_calificacion">Editar calificación</string>
+    <string name="puntuacion">Puntuación</string>
+    <string name="comentario">Comentario</string>
+    <string name="guardar">Guardar</string>
+    <string name="calificaciones_count">%1$d calificaciones</string>
+    <string name="no_hay_calificaciones">Aún no hay calificaciones</string>
+
+    <!-- Stats -->
+    <string name="estadisticas">Estadísticas</string>
+    <string name="proveedores_activos">Proveedores activos</string>
+    <string name="servicios_realizados">Servicios realizados</string>
+    <string name="calificacion_media">Calificación media</string>
+
+    <!-- Billetera -->
+    <string name="billetera">Billetera</string>
+    <string name="ingresos_totales">Ingresos totales</string>
+    <string name="historial">Historial</string>
+    <string name="no_trabajos_completados">Todavía no tienes trabajos completados.</string>
+
+    <!-- Elegir dirección -->
+    <string name="elegir_direccion">Elegir dirección</string>
+    <string name="escribe_direccion_barrio">Escribe tu dirección o barrio</string>
+    <string name="buscar">Buscar</string>
+    <string name="no_encontrada_direccion">No se encontró esa dirección. Ajusta el texto o mueve el mapa.</string>
+    <string name="enviando_a">Enviando a</string>
+    <string name="mueve_mapa_escribe">Mueve el mapa o escribe tu dirección</string>
+    <string name="confirmar_direccion">Confirmar dirección</string>
+
+    <!-- Proveedores cercanos -->
+    <string name="proveedores_cercanos">Proveedores cercanos</string>
+    <string name="radio">Radio:</string>
+    <string name="km">%1$d km</string>
+    <string name="lista">Lista</string>
+    <string name="mapa">Mapa</string>
+    <string name="necesitamos_saber_ubicacion">Necesitamos saber dónde estás</string>
+    <string name="usa_gps_elege_direccion">Usa tu GPS o elige tu dirección para ver proveedores cerca.</string>
+    <string name="usar_mi_gps">Usar mi GPS</string>
+    <string name="elegir_mi_direccion">Elegir mi dirección</string>
+    <string name="no_hay_proveedores">No hay proveedores</string>
+    <string name="no_proveedores_radio">No se encontraron proveedores en el radio seleccionado. Prueba ampliar el radio.</string>
+    <string name="tu_ubicacion">Tu ubicación</string>
+    <string name="sin_calificaciones">Sin calificaciones</string>
+
+    <!-- Errores / Snackbars -->
+    <string name="error_prefijo">Error: %1$s</string>
+    <string name="no_se_pudo_cargar_info">No pudimos cargar tu información.</string>
+    <string name="verifica_conexion">Verifica tu conexión e inténtalo de nuevo.</string>
+    <string name="no_se_pudo_cargar_billetera">No se pudo cargar la billetera</string>
+    <string name="no_encontrada_direccion_ajusta">No se encontró esa dirección. Ajusta el texto o mueve el mapa.</string>
+
+    <!-- Formato de precio -->
+    <string name="trabajos_completados">%1$s trabajo%2$s completado%3$s</string>
+
+    <!-- Bottom Navigation -->
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_catalogo">Catálogo</string>
+    <string name="nav_solicitudes">Solicitudes</string>
+    <string name="nav_perfil">Perfil</string>
+    <string name="nav_trabajos">Trabajos</string>
+    <string name="nav_billetera">Billetera</string>
 </resources>

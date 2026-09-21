@@ -13,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.components.EmptyState
@@ -24,8 +26,9 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 @Composable
 fun MisSolicitudesClienteScreen(
     onBack: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onDetalle: (Solicitud, Boolean) -> Unit = { _, _ -> },
+    refreshTrigger: Int = 0,
     viewModel: SolicitudViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -34,14 +37,20 @@ fun MisSolicitudesClienteScreen(
     LaunchedEffect(Unit) {
         viewModel.loadSolicitudesCliente()
     }
+    LaunchedEffect(refreshTrigger) {
+        if (refreshTrigger > 0) {
+            if (mostrarProveedor) viewModel.loadSolicitudesProveedor()
+            else viewModel.loadSolicitudesCliente()
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Solicitudes") },
+                title = { Text(stringResource(R.string.solicitudes)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
@@ -64,7 +73,7 @@ fun MisSolicitudesClienteScreen(
                         mostrarProveedor = false
                         viewModel.loadSolicitudesCliente()
                     },
-                    label = { Text("Mis solicitudes") }
+                    label = { Text(stringResource(R.string.mis_solicitudes_chip)) }
                 )
                 FilterChip(
                     selected = mostrarProveedor,
@@ -72,7 +81,7 @@ fun MisSolicitudesClienteScreen(
                         mostrarProveedor = true
                         viewModel.loadSolicitudesProveedor()
                     },
-                    label = { Text("Recibidas") }
+                    label = { Text(stringResource(R.string.recibidas)) }
                 )
             }
 
@@ -88,9 +97,9 @@ fun MisSolicitudesClienteScreen(
                 uiState.error != null -> {
                     EmptyState(
                         icon = Icons.Default.Inbox,
-                        title = "Algo salió mal",
+                        title = stringResource(R.string.algo_sallo_mal),
                         subtitle = uiState.error,
-                        actionLabel = "Reintentar",
+                        actionLabel = stringResource(R.string.reintentar),
                         onAction = {
                             if (mostrarProveedor) viewModel.loadSolicitudesProveedor()
                             else viewModel.loadSolicitudesCliente()
@@ -100,8 +109,8 @@ fun MisSolicitudesClienteScreen(
                 uiState.solicitudes.isEmpty() -> {
                     EmptyState(
                         icon = Icons.Default.Inbox,
-                        title = if (mostrarProveedor) "No tienes solicitudes recibidas" else "No tienes solicitudes aún",
-                        subtitle = if (mostrarProveedor) "Las solicitudes de clientes aparecerán aquí" else "Crea una solicitud desde el catálogo"
+                        title = if (mostrarProveedor) stringResource(R.string.no_tienes_solicitudes_recibidas) else stringResource(R.string.no_tienes_solicitudes),
+                        subtitle = if (mostrarProveedor) stringResource(R.string.solicitudes_clientes_apareceran) else stringResource(R.string.crea_solicitud_catalogo)
                     )
                 }
                 else -> {
@@ -111,9 +120,11 @@ fun MisSolicitudesClienteScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(uiState.solicitudes) { solicitud ->
+                            val ocupado = (solicitud.idSolicitud ?: -1) in uiState.procesando
                             if (mostrarProveedor) {
                                 SolicitudProveedorInlineCard(
                                     solicitud = solicitud,
+                                    procesando = ocupado,
                                     onClick = { onDetalle(solicitud, true) },
                                     onAceptar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
                                     onRechazar = { solicitud.idSolicitud?.let { viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA) } },
@@ -123,6 +134,7 @@ fun MisSolicitudesClienteScreen(
                             } else {
                                 SolicitudClienteCard(
                                     solicitud = solicitud,
+                                    procesando = ocupado,
                                     onClick = { onDetalle(solicitud, false) },
                                     onCalificar = onCalificar,
                                     onCancelar = { id -> viewModel.cambiarEstado(id, EstadoSolicitud.CANCELADA) }
@@ -139,8 +151,9 @@ fun MisSolicitudesClienteScreen(
 @Composable
 private fun SolicitudClienteCard(
     solicitud: Solicitud,
+    procesando: Boolean = false,
     onClick: () -> Unit,
-    onCalificar: (Int, Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
     onCancelar: (Int) -> Unit
 ) {
     val estadoColor = when (solicitud.estado) {
@@ -164,7 +177,7 @@ private fun SolicitudClienteCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = solicitud.tituloServicio ?: "Servicio",
+                    text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -186,7 +199,7 @@ private fun SolicitudClienteCard(
             if (solicitud.nombreProveedor != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Proveedor: ${solicitud.nombreProveedor}",
+                    text = stringResource(R.string.proveedor_label, solicitud.nombreProveedor),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -224,10 +237,10 @@ private fun SolicitudClienteCard(
                     onClick = {
                         onCalificar(
                             solicitud.idSolicitud,
-                            solicitud.idProveedor,
-                            solicitud.tituloServicio ?: "Servicio"
+                            solicitud.idProveedor
                         )
                     },
+                    enabled = !procesando,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
@@ -236,7 +249,7 @@ private fun SolicitudClienteCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Calificar servicio")
+                    Text(stringResource(R.string.calificar_servicio))
                 }
             }
 
@@ -244,6 +257,7 @@ private fun SolicitudClienteCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = { solicitud.idSolicitud?.let { onCancelar(it) } },
+                    enabled = !procesando,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
@@ -251,7 +265,7 @@ private fun SolicitudClienteCard(
                 ) {
                     Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cancelar solicitud")
+                    Text(stringResource(R.string.cancelar_solicitud))
                 }
             }
         }
@@ -261,6 +275,7 @@ private fun SolicitudClienteCard(
 @Composable
 private fun SolicitudProveedorInlineCard(
     solicitud: Solicitud,
+    procesando: Boolean = false,
     onClick: () -> Unit,
     onAceptar: () -> Unit,
     onRechazar: () -> Unit,
@@ -288,7 +303,7 @@ private fun SolicitudProveedorInlineCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = solicitud.tituloServicio ?: "Servicio",
+                    text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
@@ -310,7 +325,7 @@ private fun SolicitudProveedorInlineCard(
             if (solicitud.nombreCliente != null) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Cliente: ${solicitud.nombreCliente}",
+                    text = stringResource(R.string.cliente_label, solicitud.nombreCliente),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -352,6 +367,7 @@ private fun SolicitudProveedorInlineCard(
                     ) {
                         OutlinedButton(
                             onClick = onRechazar,
+                            enabled = !procesando,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
@@ -359,26 +375,33 @@ private fun SolicitudProveedorInlineCard(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Rechazar")
+                            Text(stringResource(R.string.rechazar))
                         }
                         Button(
                             onClick = onAceptar,
+                            enabled = !procesando,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Aceptar")
+                            if (procesando) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.aceptar))
+                            }
                         }
                     }
                 }
                 EstadoSolicitud.ACEPTADA -> {
-                    Button(onClick = onIniciar, modifier = Modifier.fillMaxWidth()) {
-                        Text("Iniciar trabajo")
+                    Button(onClick = onIniciar, enabled = !procesando, modifier = Modifier.fillMaxWidth()) {
+                        if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        else Text(stringResource(R.string.iniciar_trabajo))
                     }
                 }
                 EstadoSolicitud.EN_PROCESO -> {
-                    Button(onClick = onCompletar, modifier = Modifier.fillMaxWidth()) {
-                        Text("Marcar como completado")
+                    Button(onClick = onCompletar, enabled = !procesando, modifier = Modifier.fillMaxWidth()) {
+                        if (procesando) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        else Text(stringResource(R.string.marcar_completado))
                     }
                 }
             }

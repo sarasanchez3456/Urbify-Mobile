@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew :app:test
+
+      - name: Lint
+        run: ./gradlew :app:lint
+
+      - name: Assemble development debug
+        run: ./gradlew :app:assembleDevelopmentDebug
+
+      - name: Validar variante de producción
+        run: ./gradlew :app:lintProductionRelease
+
+      - name: Subir resultados de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/reports/tests/
+          retention-days: 14
+
+      - name: Subir resultados de lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: app/build/reports/
+          retention-days: 14

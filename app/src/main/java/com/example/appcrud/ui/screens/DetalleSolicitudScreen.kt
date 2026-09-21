@@ -9,12 +9,15 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
@@ -22,24 +25,19 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleSolicitudScreen(
-    solicitud: Solicitud,
+    solicitudId: Int,
     esProveedor: Boolean,
     onBack: () -> Unit,
-    onCalificar: (idSolicitud: Int, idProveedor: Int, titulo: String) -> Unit,
-    viewModel: SolicitudViewModel = viewModel()
+    onCalificar: (idSolicitud: Int, idProveedor: Int) -> Unit,
+    viewModel: SolicitudViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var confirmarCancelar by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val defaultError = stringResource(R.string.error_prefijo, "")
 
-    LaunchedEffect(Unit) {
-        if (esProveedor) viewModel.loadSolicitudesProveedor()
-        else viewModel.loadSolicitudesCliente()
+    LaunchedEffect(solicitudId, esProveedor) {
+        if (solicitudId > 0) viewModel.loadDetalle(solicitudId, esProveedor)
     }
-
-    // reflect state changes made from this screen
-    val solicitudActual = uiState.solicitudes.firstOrNull { it.idSolicitud == solicitud.idSolicitud } ?: solicitud
-
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -48,199 +46,204 @@ fun DetalleSolicitudScreen(
     }
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar("Error: $it")
+            snackbarHostState.showSnackbar(defaultError.format(it))
             viewModel.clearMessages()
         }
-    }
-
-    if (confirmarCancelar) {
-        AlertDialog(
-            onDismissRequest = { confirmarCancelar = false },
-            title = { Text("Cancelar solicitud") },
-            text = { Text("¿Estás seguro de que quieres cancelar esta solicitud?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        solicitudActual.idSolicitud?.let {
-                            viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
-                        }
-                        confirmarCancelar = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) { Text("Cancelar solicitud") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmarCancelar = false }) { Text("Mantener") }
-            }
-        )
-    }
-
-    val estadoColor = when (solicitudActual.estado) {
-        EstadoSolicitud.PENDIENTE -> MaterialTheme.colorScheme.secondary
-        EstadoSolicitud.ACEPTADA -> MaterialTheme.colorScheme.tertiary
-        EstadoSolicitud.EN_PROCESO -> MaterialTheme.colorScheme.primary
-        EstadoSolicitud.COMPLETADA -> MaterialTheme.colorScheme.primary
-        EstadoSolicitud.RECHAZADA, EstadoSolicitud.CANCELADA -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Detalle de solicitud") },
+                title = { Text(stringResource(R.string.detalle_solicitud)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.volver),
+                        )
                     }
-                }
+                },
+            )
+        },
+    ) { padding ->
+        when {
+            solicitudId <= 0 -> DetalleAviso(
+                modifier = Modifier.padding(padding),
+                mensaje = stringResource(R.string.solicitud_invalida),
+                onBack = onBack,
+            )
+            uiState.detalleIsLoading -> Box(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) { CircularProgressIndicator() }
+            uiState.detalleError != null -> DetalleAviso(
+                modifier = Modifier.padding(padding),
+                mensaje = uiState.detalleError ?: stringResource(R.string.no_se_pudo_cargar_solicitud),
+                onRetry = { viewModel.loadDetalle(solicitudId, esProveedor) },
+                onBack = onBack,
+            )
+            uiState.detalleNoEncontrado || uiState.detalle == null -> DetalleAviso(
+                modifier = Modifier.padding(padding),
+                mensaje = stringResource(R.string.solicitud_no_encontrada),
+                onBack = onBack,
+            )
+            else -> SolicitudDetalleContenido(
+                solicitud = uiState.detalle!!,
+                esProveedor = esProveedor,
+                procesando = uiState.procesando.contains(solicitudId),
+                onCambiarEstado = viewModel::cambiarEstado,
+                onCalificar = onCalificar,
+                modifier = Modifier.padding(padding),
             )
         }
-    ) { padding ->
+    }
+}
+
+@Composable
+private fun DetalleAviso(
+    mensaje: String,
+    modifier: Modifier = Modifier,
+    onRetry: (() -> Unit)? = null,
+    onBack: () -> Unit,
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // header — service title + badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
+            Text(mensaje, style = MaterialTheme.typography.bodyLarge)
+            if (onRetry != null) Button(onClick = onRetry) { Text(stringResource(R.string.reintentar)) }
+            OutlinedButton(onClick = onBack) { Text(stringResource(R.string.volver)) }
+        }
+    }
+}
+
+@Composable
+private fun SolicitudDetalleContenido(
+    solicitud: Solicitud,
+    esProveedor: Boolean,
+    procesando: Boolean,
+    onCambiarEstado: (Int, String) -> Unit,
+    onCalificar: (Int, Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var confirmarCancelar by rememberSaveable(solicitud.idSolicitud) { mutableStateOf(false) }
+    val solicitudId = solicitud.idSolicitud
+    val proveedorId = solicitud.idProveedor
+
+    if (confirmarCancelar) {
+        AlertDialog(
+            onDismissRequest = { confirmarCancelar = false },
+            title = { Text(stringResource(R.string.cancelar_solicitud)) },
+            text = { Text(stringResource(R.string.estas_seguro_cancelar)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.CANCELADA) }
+                        confirmarCancelar = false
+                    },
+                    enabled = !procesando,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.cancelar_solicitud)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarCancelar = false }) { Text(stringResource(R.string.mantener)) }
+            },
+        )
+    }
+
+    val estadoColor = when (solicitud.estado) {
+        EstadoSolicitud.PENDIENTE -> MaterialTheme.colorScheme.secondary
+        EstadoSolicitud.ACEPTADA -> MaterialTheme.colorScheme.tertiary
+        EstadoSolicitud.EN_PROCESO, EstadoSolicitud.COMPLETADA -> MaterialTheme.colorScheme.primary
+        EstadoSolicitud.RECHAZADA, EstadoSolicitud.CANCELADA -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+        ) {
+            Text(
+                text = solicitud.tituloServicio ?: stringResource(R.string.servicio_label),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Surface(shape = MaterialTheme.shapes.small, color = estadoColor.copy(alpha = 0.15f)) {
                 Text(
-                    text = solicitudActual.tituloServicio ?: "Servicio",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    text = solicitud.estado?.replace("_", " ")?.replaceFirstChar { it.uppercase() } ?: "",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = estadoColor,
+                    fontWeight = FontWeight.SemiBold,
                 )
-                Spacer(Modifier.width(8.dp))
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = estadoColor.copy(alpha = 0.15f)
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        if (esProveedor) solicitud.nombreCliente?.let {
+            CampoDetalle(Icons.Default.Person, stringResource(R.string.cliente), it)
+        } else solicitud.nombreProveedor?.let {
+            CampoDetalle(Icons.Default.Person, stringResource(R.string.proveedor), it)
+        }
+        solicitud.direccion?.let { CampoDetalle(Icons.Default.LocationOn, stringResource(R.string.direccion), it) }
+        solicitud.mensaje?.let { CampoDetalle(Icons.AutoMirrored.Filled.Message, stringResource(R.string.mensaje), it) }
+        solicitud.fechaSolicitud?.let { CampoDetalle(Icons.Default.CalendarToday, stringResource(R.string.fecha), it) }
+
+        Spacer(Modifier.height(28.dp))
+        if (procesando) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+        } else if (esProveedor) {
+            when (solicitud.estado) {
+                EstadoSolicitud.PENDIENTE -> Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.CANCELADA) } },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    ) { Text(stringResource(R.string.rechazar)) }
+                    Button(
+                        onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.ACEPTADA) } },
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.aceptar)) }
+                }
+                EstadoSolicitud.ACEPTADA -> Button(
+                    onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.EN_PROCESO) } },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.iniciar_trabajo)) }
+                EstadoSolicitud.EN_PROCESO -> Button(
+                    onClick = { solicitudId?.let { onCambiarEstado(it, EstadoSolicitud.COMPLETADA) } },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.marcar_completado)) }
+            }
+        } else {
+            if (solicitud.estado == EstadoSolicitud.COMPLETADA && solicitudId != null && proveedorId != null) {
+                Button(
+                    onClick = { onCalificar(solicitudId, proveedorId) },
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = solicitudActual.estado
-                            ?.replace("_", " ")
-                            ?.replaceFirstChar { it.uppercase() } ?: "",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = estadoColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Icon(Icons.Default.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.calificar_servicio))
                 }
+                Spacer(Modifier.height(8.dp))
             }
-
-            Spacer(Modifier.height(24.dp))
-
-            // details
-            if (esProveedor) {
-                solicitudActual.nombreCliente?.let {
-                    CampoDetalle(Icons.Default.Person, "Cliente", it)
-                }
-            } else {
-                solicitudActual.nombreProveedor?.let {
-                    CampoDetalle(Icons.Default.Person, "Proveedor", it)
-                }
-            }
-
-            solicitudActual.direccion?.let {
-                CampoDetalle(Icons.Default.LocationOn, "Dirección", it)
-            }
-
-            solicitudActual.mensaje?.let {
-                CampoDetalle(Icons.AutoMirrored.Filled.Message, "Mensaje", it)
-            }
-
-            solicitudActual.fechaSolicitud?.let {
-                CampoDetalle(Icons.Default.CalendarToday, "Fecha", it)
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            // actions
-            if (uiState.isLoading) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                if (esProveedor) {
-                    when (solicitudActual.estado) {
-                        EstadoSolicitud.PENDIENTE -> {
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                OutlinedButton(
-                                    onClick = {
-                                        solicitudActual.idSolicitud?.let {
-                                            viewModel.cambiarEstado(it, EstadoSolicitud.CANCELADA)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) { Text("Rechazar") }
-                                Button(
-                                    onClick = {
-                                        solicitudActual.idSolicitud?.let {
-                                            viewModel.cambiarEstado(it, EstadoSolicitud.ACEPTADA)
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                ) { Text("Aceptar") }
-                            }
-                        }
-                        EstadoSolicitud.ACEPTADA -> {
-                            Button(
-                                onClick = {
-                                    solicitudActual.idSolicitud?.let {
-                                        viewModel.cambiarEstado(it, EstadoSolicitud.EN_PROCESO)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text("Iniciar trabajo") }
-                        }
-                        EstadoSolicitud.EN_PROCESO -> {
-                            Button(
-                                onClick = {
-                                    solicitudActual.idSolicitud?.let {
-                                        viewModel.cambiarEstado(it, EstadoSolicitud.COMPLETADA)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) { Text("Marcar como completado") }
-                        }
-                    }
-                } else {
-                    if (solicitudActual.estado == EstadoSolicitud.COMPLETADA &&
-                        solicitudActual.idSolicitud != null && solicitudActual.idProveedor != null) {
-                        Button(
-                            onClick = {
-                                onCalificar(
-                                    solicitudActual.idSolicitud,
-                                    solicitudActual.idProveedor,
-                                    solicitudActual.tituloServicio ?: "Servicio"
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Calificar servicio")
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
-                    if (solicitudActual.estado == EstadoSolicitud.PENDIENTE) {
-                        OutlinedButton(
-                            onClick = { confirmarCancelar = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.Close, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Cancelar solicitud")
-                        }
-                    }
+            if (solicitud.estado == EstadoSolicitud.PENDIENTE) {
+                OutlinedButton(
+                    onClick = { confirmarCancelar = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.cancelar_solicitud))
                 }
             }
         }
@@ -250,25 +253,18 @@ fun DetalleSolicitudScreen(
 @Composable
 private fun CampoDetalle(icon: ImageVector, label: String, valor: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.Top,
-            modifier = Modifier.padding(vertical = 10.dp)
-        ) {
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 10.dp)) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp).padding(top = 2.dp)
+                modifier = Modifier.size(20.dp).padding(top = 2.dp),
             )
             Spacer(Modifier.width(12.dp))
             Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(2.dp))
-                Text(text = valor, style = MaterialTheme.typography.bodyMedium)
+                Text(valor, style = MaterialTheme.typography.bodyMedium)
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

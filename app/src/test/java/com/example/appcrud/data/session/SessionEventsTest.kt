@@ -13,15 +13,15 @@ class SessionEventsTest {
     fun `una sesion expirada solo emite un evento hasta un nuevo login`() = runBlocking {
         SessionEvents.markSessionActive()
 
-        SessionEvents.notifySessionExpired()
-        SessionEvents.notifySessionExpired()
+        SessionEvents.notifyExpired()
+        SessionEvents.notifyExpired()
 
-        assertEquals(Unit, SessionEvents.sessionExpired.first())
-        assertNull(withTimeoutOrNull(50) { SessionEvents.sessionExpired.first() })
+        assertEquals(Unit, SessionEvents.expired.first())
+        assertNull(withTimeoutOrNull(50) { SessionEvents.expired.first() })
 
         SessionEvents.markSessionActive()
-        SessionEvents.notifySessionExpired()
+        SessionEvents.notifyExpired()
 
-        assertEquals(Unit, SessionEvents.sessionExpired.first())
+        assertEquals(Unit, SessionEvents.expired.first())
     }
 }

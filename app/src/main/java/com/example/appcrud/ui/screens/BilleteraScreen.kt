@@ -13,9 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.appcrud.R
 import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
@@ -27,12 +29,6 @@ private val AzulPrimario = Color(0xFF2F4BDE)
 private val FondoPagina = Color(0xFFF4F6FC)
 private val TextoTenue = Color(0xFF8B93A8)
 
-/**
- * Billetera del proveedor: ingresos por trabajo completado.
- *
- * MVP: no hay pasarela de pagos en el backend, así que se toma la `tarifa` del
- * servicio de cada solicitud en estado "completada" como ingreso registrado.
- */
 @Composable
 fun BilleteraScreen(onBack: () -> Unit = {}) {
     var completadas by remember { mutableStateOf<List<Solicitud>>(emptyList()) }
@@ -56,10 +52,10 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Billetera") },
+                title = { Text(stringResource(R.string.billetera)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 },
             )
@@ -77,12 +73,17 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(20.dp)) {
-                    Text("Ingresos totales", color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.ingresos_totales), color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
                     Text(cop.format(total), color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
+                    val count = completadas.size
                     Text(
-                        "${completadas.size} trabajo${if (completadas.size == 1) "" else "s"} completado${if (completadas.size == 1) "" else "s"}",
+                        stringResource(R.string.trabajos_completados,
+                            count.toString(),
+                            if (count == 1) "" else "s",
+                            if (count == 1) "" else "s"
+                        ),
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -90,7 +91,7 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
             }
 
             Spacer(Modifier.height(20.dp))
-            Text("Historial", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.historial), fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
 
             when {
@@ -98,7 +99,7 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
                     CircularProgressIndicator(color = AzulPrimario)
                 }
                 error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
-                completadas.isEmpty() -> Text("Todavía no tienes trabajos completados.", color = TextoTenue)
+                completadas.isEmpty() -> Text(stringResource(R.string.no_trabajos_completados), color = TextoTenue)
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(completadas) { s ->
                         Surface(
@@ -110,12 +111,12 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
                             Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Column(Modifier.weight(1f)) {
                                     Text(
-                                        s.tituloServicio ?: "Servicio",
+                                        s.tituloServicio ?: stringResource(R.string.servicio_label),
                                         fontWeight = FontWeight.SemiBold,
                                         maxLines = 1,
                                     )
                                     Text(
-                                        listOfNotNull(s.nombreCliente, s.apellidoCliente).joinToString(" ").ifBlank { "Cliente" },
+                                        listOfNotNull(s.nombreCliente, s.apellidoCliente).joinToString(" ").ifBlank { stringResource(R.string.cliente) },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextoTenue,
                                     )

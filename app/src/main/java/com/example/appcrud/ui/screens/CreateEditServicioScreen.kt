@@ -6,15 +6,18 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.CreateEditServicioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,12 +37,13 @@ fun CreateEditServicioScreen(
         if (uiState.success) onSuccess()
     }
 
-    // Pre-fill form from existing service when editing
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var precioTexto by remember { mutableStateOf("") }
     var categoriaSeleccionada by remember { mutableStateOf<com.example.appcrud.data.model.Categoria?>(null) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+    var mostrarNuevaCategoria by remember { mutableStateOf(false) }
+    var nombreNuevaCategoria by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.servicioExistente) {
         uiState.servicioExistente?.let { s ->
@@ -61,21 +65,71 @@ fun CreateEditServicioScreen(
         }
     }
 
+    LaunchedEffect(uiState.categoriaCreada) {
+        uiState.categoriaCreada?.let {
+            categoriaSeleccionada = it
+            mostrarNuevaCategoria = false
+            nombreNuevaCategoria = ""
+            viewModel.consumirCategoriaCreada()
+        }
+    }
+
     val precio = precioTexto.toDoubleOrNull()
     val formOk = titulo.isNotBlank() && categoriaSeleccionada != null
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (esEdicion) "Editar servicio" else "Nuevo servicio") },
+                title = { Text(if (esEdicion) stringResource(R.string.editar_servicio) else stringResource(R.string.nuevo_servicio)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 }
             )
         }
     ) { padding ->
+        if (mostrarNuevaCategoria) {
+            AlertDialog(
+                onDismissRequest = {
+                    if (!uiState.isCreatingCategoria) mostrarNuevaCategoria = false
+                },
+                title = { Text("Nueva categoría") },
+                text = {
+                    OutlinedTextField(
+                        value = nombreNuevaCategoria,
+                        onValueChange = { nombreNuevaCategoria = it },
+                        label = { Text("Nombre de la categoría") },
+                        singleLine = true,
+                        enabled = !uiState.isCreatingCategoria,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.crearCategoria(nombreNuevaCategoria) },
+                        enabled = nombreNuevaCategoria.isNotBlank() && !uiState.isCreatingCategoria,
+                    ) {
+                        if (uiState.isCreatingCategoria) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Text("Agregar")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { mostrarNuevaCategoria = false },
+                        enabled = !uiState.isCreatingCategoria,
+                    ) { Text("Cancelar") }
+                },
+            )
+        }
+
         when {
             uiState.isLoading -> {
                 Box(
@@ -110,7 +164,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = titulo,
                         onValueChange = { titulo = it },
-                        label = { Text("Título del servicio *") },
+                        label = { Text(stringResource(R.string.titulo_servicio)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -118,7 +172,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = descripcion,
                         onValueChange = { descripcion = it },
-                        label = { Text("Descripción") },
+                        label = { Text(stringResource(R.string.descripcion)) },
                         minLines = 3,
                         maxLines = 5,
                         modifier = Modifier.fillMaxWidth()
@@ -127,7 +181,7 @@ fun CreateEditServicioScreen(
                     OutlinedTextField(
                         value = precioTexto,
                         onValueChange = { precioTexto = it.filter { c -> c.isDigit() || c == '.' } },
-                        label = { Text("Precio (opcional)") },
+                        label = { Text(stringResource(R.string.precio_opcional)) },
                         prefix = { Text("$") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -142,7 +196,7 @@ fun CreateEditServicioScreen(
                             value = categoriaSeleccionada?.nombre ?: "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Categoría *") },
+                            label = { Text(stringResource(R.string.categoria)) },
                             trailingIcon = {
                                 Icon(
                                     if (dropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -166,6 +220,15 @@ fun CreateEditServicioScreen(
                                     }
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Crear nueva categoría") },
+                                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+                                onClick = {
+                                    dropdownExpanded = false
+                                    mostrarNuevaCategoria = true
+                                }
+                            )
                         }
                     }
 
@@ -190,7 +253,7 @@ fun CreateEditServicioScreen(
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         } else {
-                            Text(if (esEdicion) "Guardar cambios" else "Publicar servicio")
+                            Text(if (esEdicion) stringResource(R.string.guardar_cambios) else stringResource(R.string.publicar_servicio))
                         }
                     }
                 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.data.network.NetworkResult
 import com.example.appcrud.data.repository.SolicitudRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,19 +16,23 @@ data class SolicitudUiState(
     val solicitudes: List<Solicitud> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
+    val detalle: Solicitud? = null,
+    val detalleIsLoading: Boolean = false,
+    val detalleError: String? = null,
+    val detalleNoEncontrado: Boolean = false,
     val successMessage: String? = null,
     /** Ids de solicitudes con un cambio de estado en curso (spinner por tarjeta). */
     val procesando: Set<Int> = emptySet(),
 )
 
-class SolicitudViewModel : ViewModel() {
-
-    private val repository = SolicitudRepository()
+class SolicitudViewModel @JvmOverloads constructor(
+    private val repository: SolicitudRepository = SolicitudRepository()
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SolicitudUiState())
     val uiState: StateFlow<SolicitudUiState> = _uiState.asStateFlow()
 
-    // Qué lista recargar tras un cambio de estado.
+    // QuÃ© lista recargar tras un cambio de estado.
     private var esProveedor = false
 
     fun loadSolicitudesCliente() {
@@ -38,6 +43,33 @@ class SolicitudViewModel : ViewModel() {
     fun loadSolicitudesProveedor() {
         esProveedor = true
         cargar { repository.getSolicitudesProveedor() }
+    }
+
+    /** Carga desde repositorio para que el detalle sobreviva a recreaciones de Activity. */
+    fun loadDetalle(idSolicitud: Int, esProveedor: Boolean) {
+        this.esProveedor = esProveedor
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    detalle = null,
+                    detalleIsLoading = true,
+                    detalleError = null,
+                    detalleNoEncontrado = false,
+                )
+            }
+            when (val result = repository.getSolicitudResult(idSolicitud, esProveedor)) {
+                is NetworkResult.Success -> _uiState.update {
+                    it.copy(
+                        detalle = result.data,
+                        detalleIsLoading = false,
+                        detalleNoEncontrado = result.data == null,
+                    )
+                }
+                is NetworkResult.Failure -> _uiState.update {
+                    it.copy(detalleIsLoading = false, detalleError = result.error.message)
+                }
+            }
+        }
     }
 
     private fun cargar(bloque: suspend () -> List<Solicitud>) {
@@ -55,8 +87,9 @@ class SolicitudViewModel : ViewModel() {
     }
 
     fun createSolicitud(idServicio: Int, mensaje: String, direccion: String, onSuccess: () -> Unit) {
+        if (_uiState.value.isLoading) return
+        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 repository.createSolicitud(Solicitud(idServicio = idServicio, mensaje = mensaje, direccion = direccion))
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")
@@ -74,11 +107,15 @@ class SolicitudViewModel : ViewModel() {
      */
     fun cambiarEstado(id: Int, nuevoEstado: String) {
         val previo = _uiState.value.solicitudes
+        val detallePrevio = _uiState.value.detalle
         viewModelScope.launch {
             _uiState.update { state ->
                 state.copy(
                     procesando = state.procesando + id,
                     error = null,
+                    detalle = state.detalle?.let {
+                        if (it.idSolicitud == id) it.copy(estado = nuevoEstado) else it
+                    },
                     solicitudes = state.solicitudes.map {
                         if (it.idSolicitud == id) it.copy(estado = nuevoEstado) else it
                     },
@@ -86,9 +123,9 @@ class SolicitudViewModel : ViewModel() {
             }
             try {
                 repository.cambiarEstado(id, nuevoEstado)
-                // Si la API tuvo éxito, intentamos refrescar la lista completa para traer
+                // Si la API tuvo Ã©xito, intentamos refrescar la lista completa para traer
                 // otros campos actualizados (como fechas o logs), pero si el refresco
-                // falla, NO revertimos el estado de la UI porque el cambio ya se persistió.
+                // falla, NO revertimos el estado de la UI porque el cambio ya se persistiÃ³.
                 val frescas = runCatching {
                     if (esProveedor) repository.getSolicitudesProveedor()
                     else repository.getSolicitudesCliente()
@@ -97,13 +134,15 @@ class SolicitudViewModel : ViewModel() {
                 _uiState.update { state ->
                     state.copy(
                         solicitudes = frescas ?: state.solicitudes,
+                        detalle = frescas?.firstOrNull { it.idSolicitud == id } ?: state.detalle,
                         successMessage = "Estado actualizado",
                     )
                 }
             } catch (e: Exception) {
                 _uiState.update { state ->
                     state.copy(
-                        solicitudes = previo, // Solo revertimos si la llamada cambiarEstado falló
+                        solicitudes = previo, // Solo revertimos si la llamada cambiarEstado fallÃ³
+                        detalle = detallePrevio,
                         error = e.aMensajeUsuario(),
                     )
                 }

@@ -27,9 +27,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.ui.components.EmptyState
 import com.example.appcrud.ui.viewmodel.StatsViewModel
 
@@ -46,12 +48,12 @@ fun StatsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Estadísticas") },
+                title = { Text(stringResource(R.string.estadisticas)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.volver)
                         )
                     }
                 }
@@ -67,9 +69,9 @@ fun StatsScreen(
 
             uiState.error != null -> EmptyState(
                 icon = Icons.Default.ErrorOutline,
-                title = "Algo salió mal",
+                title = stringResource(R.string.algo_sallo_mal),
                 subtitle = uiState.error,
-                actionLabel = "Reintentar",
+                actionLabel = stringResource(R.string.reintentar),
                 onAction = { viewModel.loadStats() },
                 modifier = Modifier.padding(padding)
             )
@@ -82,9 +84,9 @@ fun StatsScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                StatCard("Proveedores activos", stats.proveedoresActivos.toString())
-                StatCard("Servicios realizados", stats.serviciosRealizados.toString())
-                StatCard("Calificación media", "★ ${stats.calificacionMedia}")
+                StatCard(stringResource(R.string.proveedores_activos), stats.proveedoresActivos.toString())
+                StatCard(stringResource(R.string.servicios_realizados), stats.serviciosRealizados.toString())
+                StatCard(stringResource(R.string.calificacion_media), "★ ${stats.calificacionMedia}")
             }
         }
     }

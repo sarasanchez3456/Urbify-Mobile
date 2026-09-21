@@ -13,11 +13,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.appcrud.R
 import com.example.appcrud.data.location.MapTiles
 import com.example.appcrud.data.location.ReverseGeocoder
 import com.example.appcrud.ui.viewmodel.SessionViewModel
@@ -29,15 +31,9 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 
-// Centro de Medellín como fallback si el usuario no tiene coordenadas.
 private const val MEDELLIN_LAT = 6.2518
 private const val MEDELLIN_LNG = -75.5636
 
-/**
- * Elegir dirección: se puede **mover el mapa** (pin fijo al centro) o **escribirla
- * a mano** en el campo de arriba (se geocodifica con Nominatim). Al confirmar se
- * guarda dirección + coordenadas en el perfil.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ElegirDireccionScreen(
@@ -56,7 +52,6 @@ fun ElegirDireccionScreen(
 
     var centro by remember { mutableStateOf(inicial) }
     var direccionInput by remember { mutableStateOf(usuario?.direccion?.trim().orEmpty()) }
-    // Mientras el usuario escribe, el paneo del mapa no debe sobrescribir el campo.
     var edicionManual by remember { mutableStateOf(false) }
     var resolviendo by remember { mutableStateOf(false) }
     var buscando by remember { mutableStateOf(false) }
@@ -89,7 +84,6 @@ fun ElegirDireccionScreen(
         }
     }
 
-    // Geocodificación inversa (coordenadas -> texto) al mover el mapa, con debounce.
     LaunchedEffect(centro.latitude, centro.longitude) {
         if (edicionManual) return@LaunchedEffect
         resolviendo = true
@@ -97,6 +91,8 @@ fun ElegirDireccionScreen(
         ReverseGeocoder.resolve(context, centro.latitude, centro.longitude)?.let { direccionInput = it }
         resolviendo = false
     }
+
+    val defaultErrorDireccion = stringResource(R.string.no_encontrada_direccion_ajusta)
 
     fun buscarDireccion() {
         val q = direccionInput.trim()
@@ -108,7 +104,7 @@ fun ElegirDireccionScreen(
             val r = ReverseGeocoder.geocode(q)
             buscando = false
             if (r == null) {
-                errorBusqueda = "No se encontró esa dirección. Ajusta el texto o mueve el mapa."
+                errorBusqueda = defaultErrorDireccion
             } else {
                 edicionManual = false
                 direccionInput = r.etiqueta
@@ -121,10 +117,10 @@ fun ElegirDireccionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Elegir dirección") },
+                title = { Text(stringResource(R.string.elegir_direccion)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.volver))
                     }
                 },
             )
@@ -137,7 +133,6 @@ fun ElegirDireccionScreen(
         ) {
             AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
-            // Pin fijo en el centro del mapa.
             Icon(
                 imageVector = Icons.Default.Place,
                 contentDescription = null,
@@ -148,7 +143,6 @@ fun ElegirDireccionScreen(
                     .offset(y = (-22).dp),
             )
 
-            // Campo de búsqueda / entrada manual (arriba).
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -167,7 +161,7 @@ fun ElegirDireccionScreen(
                             errorBusqueda = null
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Escribe tu dirección o barrio") },
+                        placeholder = { Text(stringResource(R.string.escribe_direccion_barrio)) },
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         trailingIcon = {
@@ -175,7 +169,7 @@ fun ElegirDireccionScreen(
                                 CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                             } else {
                                 TextButton(onClick = { buscarDireccion() }, enabled = direccionInput.isNotBlank()) {
-                                    Text("Buscar")
+                                    Text(stringResource(R.string.buscar))
                                 }
                             }
                         },
@@ -193,7 +187,6 @@ fun ElegirDireccionScreen(
                 }
             }
 
-            // Tarjeta inferior: confirmación.
             Card(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -203,13 +196,13 @@ fun ElegirDireccionScreen(
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
-                        text = "Enviando a",
+                        text = stringResource(R.string.enviando_a),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = direccionInput.ifBlank { "Mueve el mapa o escribe tu dirección" },
+                        text = direccionInput.ifBlank { stringResource(R.string.mueve_mapa_escribe) },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -217,8 +210,6 @@ fun ElegirDireccionScreen(
                     Button(
                         onClick = {
                             scope.launch {
-                                // Si la dirección se escribió a mano y el mapa no se movió,
-                                // geocodificamos para no guardar coordenadas viejas.
                                 val destino = if (edicionManual) {
                                     ReverseGeocoder.geocode(direccionInput)?.let { GeoPoint(it.lat, it.lng) } ?: centro
                                 } else centro
@@ -237,7 +228,7 @@ fun ElegirDireccionScreen(
                         enabled = usuario != null && direccionInput.isNotBlank() && !buscando,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Confirmar dirección")
+                        Text(stringResource(R.string.confirmar_direccion))
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(
