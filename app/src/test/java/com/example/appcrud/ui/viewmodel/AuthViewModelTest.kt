@@ -34,11 +34,11 @@ import java.io.IOException
 
 /**
  * AuthViewModel guarda el token con TokenManager.saveToken(getApplication(), ...),
- * asÃ­ que en vez de mockear TokenManager (es un `object`, no inyectable),
- * lo inicializamos con un DataStore de prueba en disco temporal â€” la misma
- * tÃ©cnica que TokenManagerTest â€” y usamos una Application mockeada que nunca
+ * así que en vez de mockear TokenManager (es un `object`, no inyectable),
+ * lo inicializamos con un DataStore de prueba en disco temporal — la misma
+ * técnica que TokenManagerTest — y usamos una Application mockeada que nunca
  * se llega a tocar (requireDataStore ya tiene el DataStore cacheado). Ver
- * TokenManager.init(DataStore, CoroutineScope) y su comentario sobre por quÃ©
+ * TokenManager.init(DataStore, CoroutineScope) y su comentario sobre por qué
  * existe ese overload internal.
  */
 class AuthViewModelTest {
@@ -78,10 +78,10 @@ class AuthViewModelTest {
     /**
      * El camino feliz de login/registro hace un `TokenManager.saveToken(...)`
      * que escribe de verdad en disco (DataStore), en un scope de
-     * Dispatchers.IO real â€” fuera del scheduler virtual de `runTest`. Por
+     * Dispatchers.IO real — fuera del scheduler virtual de `runTest`. Por
      * eso `viewModel.login(...)` puede volver ANTES de que esa escritura (y
      * el `_uiState.update` posterior) terminen. Los caminos de error no
-     * necesitan este helper porque el mock lanza la excepciÃ³n antes de
+     * necesitan este helper porque el mock lanza la excepción antes de
      * llegar a tocar disco.
      */
     private fun awaitState(timeoutMs: Long = 2000, predicate: (AuthUiState) -> Boolean): AuthUiState {
@@ -111,14 +111,14 @@ class AuthViewModelTest {
     @Test
     fun `login con credenciales invalidas expone el mensaje del backend`() = runTest {
         coEvery { repository.login(any(), any()) } throws
-            httpException(401, """{"error":"Credenciales invÃ¡lidas"}""")
+            httpException(401, """{"error":"Credenciales inválidas"}""")
 
         viewModel.login("a@a.com", "mala")
 
         val estado = viewModel.uiState.value
         assertFalse(estado.isLoading)
         assertFalse(estado.success)
-        assertEquals("Credenciales invÃ¡lidas", estado.error)
+        assertEquals("Credenciales inválidas", estado.error)
         assertFalse(estado.bloqueado)
     }
 
@@ -149,7 +149,7 @@ class AuthViewModelTest {
     fun `registro exitoso deja success en true`() = runTest {
         val usuario = Usuario(idUsuario = 9, correo = "nueva@a.com", rol = "proveedor")
         val request = RegistroRequest(
-            nombre = "Ana", apellido = "GÃ³mez", correo = "nueva@a.com",
+            nombre = "Ana", apellido = "Gómez", correo = "nueva@a.com",
             contrasena = "secreta", rol = "proveedor"
         )
         coEvery { repository.registro(request) } returns AuthResponse("jwt-nuevo", usuario)

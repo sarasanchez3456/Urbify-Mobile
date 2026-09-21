@@ -125,7 +125,7 @@ class SessionViewModelTest {
     @Test
     fun `actualizarPerfil con error de red no marca updateSuccess`() = runTest {
         val actualizado = Usuario(idUsuario = 1, correo = "a@a.com", rol = "cliente")
-        coEvery { api.updatePerfil(actualizado) } throws IOException("Sin conexiÃƒÂ³n")
+        coEvery { api.updatePerfil(actualizado) } throws IOException("Sin conexión")
 
         viewModel.actualizarPerfil(actualizado)
 
@@ -137,14 +137,14 @@ class SessionViewModelTest {
     @Test
     fun `setDisponible revierte al valor original si la API falla`() = runTest {
         viewModel.setSession(Usuario(idUsuario = 1, correo = "a@a.com", rol = "proveedor", disponible = false))
-        coEvery { api.updatePerfil(any()) } throws IOException("Sin conexiÃƒÂ³n")
+        coEvery { api.updatePerfil(any()) } throws IOException("Sin conexión")
 
         viewModel.setDisponible(true)
 
         // Con UnconfinedTestDispatcher el launch (incluido el catch/revert)
-        // puede correr inline antes de que setDisponible() retorne, asÃƒÂ­ que
+        // puede correr inline antes de que setDisponible() retorne, así que
         // no hay una ventana confiable para observar el valor optimista a
-        // mitad de camino acÃƒÂ¡ Ã¢â‚¬â€ lo que sÃƒÂ­ es un contrato estable es el
+        // mitad de camino acá — lo que sí es un contrato estable es el
         // estado FINAL: revertido, con el error visible.
         val estado = awaitState { it.error != null }
         assertEquals(false, estado.usuario?.disponible)
@@ -157,8 +157,8 @@ class SessionViewModelTest {
 
         viewModel.setDisponible(true)
 
-        // Ninguna llamada fue mockeada (`api` estÃƒÂ¡ en modo estricto): si
-        // setDisponible hubiera llamado a la API, MockK tirarÃƒÂ­a acÃƒÂ¡.
+        // Ninguna llamada fue mockeada (`api` está en modo estricto): si
+        // setDisponible hubiera llamado a la API, MockK tiraría acá.
         assertEquals(true, viewModel.usuario?.disponible)
     }
 

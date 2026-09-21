@@ -23,8 +23,8 @@ sealed interface TokenState {
 }
 
 /**
- * Fuente Ãºnica del JWT. En la app se persiste cifrado por Android Keystore; el
- * DataStore sÃ³lo se mantiene como adaptador interno para los tests JVM.
+ * Fuente única del JWT. En la app se persiste cifrado por Android Keystore; el
+ * DataStore sólo se mantiene como adaptador interno para los tests JVM.
  */
 object TokenManager {
     private const val PREFERENCES_FILE = "urbify_secure_session"
