@@ -3,6 +3,8 @@ package com.example.appcrud.data.repository
 import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.model.EstadoUpdateRequest
+import com.example.appcrud.data.model.EnviarMensajeRequest
+import com.example.appcrud.data.model.MensajeSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.network.NetworkResult
 import com.example.appcrud.data.network.safeNetworkCall
@@ -36,5 +38,11 @@ class SolicitudRepository(private val api: ApiService = RetrofitClient.apiServic
 
     suspend fun deleteSolicitud(id: Int) {
         api.deleteSolicitud(id)
+    }
+
+    suspend fun getMensajes(idSolicitud: Int): List<MensajeSolicitud> = api.getMensajesSolicitud(idSolicitud)
+
+    suspend fun enviarMensaje(idSolicitud: Int, contenido: String) {
+        api.enviarMensajeSolicitud(idSolicitud, EnviarMensajeRequest(contenido))
     }
 }

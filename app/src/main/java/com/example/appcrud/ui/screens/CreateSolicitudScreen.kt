@@ -1,6 +1,8 @@
 package com.example.appcrud.ui.screens
 
 import androidx.compose.foundation.layout.*
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -9,11 +11,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateSolicitudScreen(
@@ -26,6 +32,41 @@ fun CreateSolicitudScreen(
     val uiState by viewModel.uiState.collectAsState()
     var mensaje by remember { mutableStateOf("") }
     var direccion by remember { mutableStateOf("") }
+
+    val context = LocalContext.current
+    var fechaProgramadaMillis by remember { mutableStateOf<Long?>(null) }
+    val formatoFecha = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) }
+    val fechaProgramada = fechaProgramadaMillis?.let { formatoFecha.format(it) }.orEmpty()
+
+    fun seleccionarFechaHora() {
+        val calendario = Calendar.getInstance().apply {
+            fechaProgramadaMillis?.let { timeInMillis = it }
+        }
+        DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                calendario.set(Calendar.YEAR, year)
+                calendario.set(Calendar.MONTH, month)
+                calendario.set(Calendar.DAY_OF_MONTH, day)
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        calendario.set(Calendar.HOUR_OF_DAY, hour)
+                        calendario.set(Calendar.MINUTE, minute)
+                        calendario.set(Calendar.SECOND, 0)
+                        calendario.set(Calendar.MILLISECOND, 0)
+                        fechaProgramadaMillis = calendario.timeInMillis
+                    },
+                    calendario.get(Calendar.HOUR_OF_DAY),
+                    calendario.get(Calendar.MINUTE),
+                    true,
+                ).show()
+            },
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH),
+        ).apply { datePicker.minDate = System.currentTimeMillis() }.show()
+    }
 
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage != null) {
@@ -86,6 +127,19 @@ fun CreateSolicitudScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
+                value = fechaProgramada,
+                onValueChange = {},
+                label = { Text("Fecha y hora del servicio *") },
+                placeholder = { Text("Selecciona cuándo lo necesitas") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                trailingIcon = {
+                    TextButton(onClick = ::seleccionarFechaHora) { Text("Elegir") }
+                },
+            )
+
+
+            OutlinedTextField(
                 value = direccion,
                 onValueChange = { direccion = it },
                 label = { Text(stringResource(R.string.direccion_servicio)) },
@@ -111,11 +165,12 @@ fun CreateSolicitudScreen(
                         idServicio = idServicio,
                         mensaje = mensaje,
                         direccion = direccion,
-                        onSuccess = {}
+                        fechaServicio = fechaProgramada,
+                        onSuccess = {},
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading && mensaje.isNotBlank() && direccion.isNotBlank()
+                enabled = !uiState.isLoading && mensaje.isNotBlank() && direccion.isNotBlank() && fechaProgramadaMillis != null && fechaProgramadaMillis!! > System.currentTimeMillis()
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(

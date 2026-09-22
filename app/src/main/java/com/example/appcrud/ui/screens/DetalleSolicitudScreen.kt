@@ -22,6 +22,11 @@ import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetalleSolicitudScreen(
@@ -29,6 +34,7 @@ fun DetalleSolicitudScreen(
     esProveedor: Boolean,
     onBack: () -> Unit,
     onCalificar: (idSolicitud: Int, idProveedor: Int) -> Unit,
+    onChat: (Int) -> Unit = {},
     viewModel: SolicitudViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -56,6 +62,9 @@ fun DetalleSolicitudScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.detalle_solicitud)) },
+                actions = {
+                    IconButton(onClick = { onChat(solicitudId) }) { Icon(Icons.AutoMirrored.Filled.Message, contentDescription = "Conversación") }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -197,6 +206,7 @@ private fun SolicitudDetalleContenido(
         solicitud.direccion?.let { CampoDetalle(Icons.Default.LocationOn, stringResource(R.string.direccion), it) }
         solicitud.mensaje?.let { CampoDetalle(Icons.AutoMirrored.Filled.Message, stringResource(R.string.mensaje), it) }
         solicitud.fechaSolicitud?.let { CampoDetalle(Icons.Default.CalendarToday, stringResource(R.string.fecha), it) }
+        solicitud.fechaServicio?.let { FechaServicioProgramada(it, solicitud.estado in listOf(EstadoSolicitud.ACEPTADA, EstadoSolicitud.EN_PROCESO)) }
 
         Spacer(Modifier.height(28.dp))
         if (procesando) {
@@ -269,4 +279,50 @@ private fun CampoDetalle(icon: ImageVector, label: String, valor: String) {
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
+}
+@Composable
+private fun FechaServicioProgramada(fecha: String, mostrarCuentaRegresiva: Boolean) {
+    val fechaProgramada = remember(fecha) { parseFechaServicio(fecha) }
+    var ahora by remember(fecha) { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(fecha) {
+        while (true) {
+            ahora = System.currentTimeMillis()
+            delay(60_000)
+        }
+    }
+
+    CampoDetalle(Icons.Default.Schedule, "Fecha y hora programadas", fechaProgramada?.let(::formatearFechaServicio) ?: fecha)
+    if (mostrarCuentaRegresiva) fechaProgramada?.let { programada ->
+        val restante = programada.time - ahora
+        val texto = if (restante <= 0) {
+            "La hora programada ya llegó"
+        } else {
+            val dias = restante / 86_400_000
+            val horas = (restante % 86_400_000) / 3_600_000
+            val minutos = (restante % 3_600_000) / 60_000
+            buildString {
+                append("Faltan ")
+                if (dias > 0) append("$dias día${if (dias == 1L) "" else "s"} y ")
+                if (horas > 0 || dias > 0) append("$horas hora${if (horas == 1L) "" else "s"} y ")
+                append("$minutos minuto${if (minutos == 1L) "" else "s"}")
+            }
+        }
+        CampoDetalle(Icons.Default.Timer, "Tiempo restante", texto)
+    }
+}
+
+private fun parseFechaServicio(valor: String): Date? {
+    val isoUtc = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+    val mysqlLocal = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    return runCatching { isoUtc.parse(valor) }.getOrNull()
+        ?: runCatching { mysqlLocal.parse(valor.replace('T', ' ').substringBefore('.')) }.getOrNull()
+}
+
+private fun formatearFechaServicio(fecha: Date): String {
+    return SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("es-CO")).apply {
+        timeZone = TimeZone.getTimeZone("America/Bogota")
+    }.format(fecha)
 }

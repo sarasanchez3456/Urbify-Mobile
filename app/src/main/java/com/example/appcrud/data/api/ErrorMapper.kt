@@ -19,7 +19,7 @@ fun Throwable.aMensajeUsuario(): String = when (this) {
     is SocketTimeoutException ->
         "El servidor tardó demasiado en responder. Intenta de nuevo."
 
-    is HttpException -> when (code()) {
+    is HttpException -> mensajeDeApi() ?: when (code()) {
         401 -> "Tu sesión expiró. Inicia sesión de nuevo."
         403 -> "No tienes permiso para realizar esta acción."
         404 -> "No se encontró la información solicitada."
@@ -34,3 +34,14 @@ fun Throwable.aMensajeUsuario(): String = when (this) {
 
     else -> "Ocurrió un error inesperado. Intenta de nuevo."
 }
+
+private fun HttpException.mensajeDeApi(): String? =
+    runCatching {
+        response()?.errorBody()?.string()?.let { cuerpo ->
+            com.google.gson.JsonParser.parseString(cuerpo)
+                .asJsonObject
+                .get("error")
+                ?.takeIf { it.isJsonPrimitive }
+                ?.asString
+        }
+    }.getOrNull()

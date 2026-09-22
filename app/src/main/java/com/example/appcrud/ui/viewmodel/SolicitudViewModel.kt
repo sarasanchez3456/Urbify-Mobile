@@ -86,12 +86,25 @@ class SolicitudViewModel @JvmOverloads constructor(
         }
     }
 
-    fun createSolicitud(idServicio: Int, mensaje: String, direccion: String, onSuccess: () -> Unit) {
+    fun createSolicitud(
+        idServicio: Int,
+        mensaje: String,
+        direccion: String,
+        fechaServicio: String,
+        onSuccess: () -> Unit,
+    ) {
         if (_uiState.value.isLoading) return
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
             try {
-                repository.createSolicitud(Solicitud(idServicio = idServicio, mensaje = mensaje, direccion = direccion))
+                repository.createSolicitud(
+                    Solicitud(
+                        idServicio = idServicio,
+                        mensaje = mensaje,
+                        direccion = direccion,
+                        fechaServicio = fechaServicio,
+                    )
+                )
                 _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")
                 onSuccess()
             } catch (e: Exception) {

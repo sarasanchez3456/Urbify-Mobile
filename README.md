@@ -183,6 +183,9 @@ Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="f
 - Vista de detalle con acciones según estado y rol
 - Cliente puede cancelar solicitudes en estado pendiente
 - Proveedor puede aceptar, rechazar, iniciar y completar
+- Fecha y hora obligatorias al solicitar; se muestran en hora de Colombia (`America/Bogota`)
+- Después de aceptar, ambas partes ven el tiempo restante hasta la cita
+- Chat persistente vinculado a cada solicitud, accesible desde su detalle
 - Historial separado para cliente y proveedor
 
 ### Calificaciones
@@ -206,6 +209,7 @@ Las variantes `staging` y `production` declaran `android:usesCleartextTraffic="f
 
 ### Billetera (Proveedor)
 - Resumen de ingresos por solicitudes completadas
+- El valor corresponde a la tarifa acordada al crear la solicitud, no a una edición posterior del servicio
 - Historial de transacciones con montos
 
 ### CRUD de servicios (Proveedor)
@@ -341,6 +345,8 @@ app/src/main/java/com/example/appcrud/
 | `POST` | `/api/solicitudes` | Crear solicitud |
 | `GET` | `/api/solicitudes/cliente` | Solicitudes del cliente |
 | `GET` | `/api/solicitudes/proveedor` | Solicitudes recibidas |
+| `GET` | `/api/solicitudes/:id/mensajes` | Historial del chat de la solicitud |
+| `POST` | `/api/solicitudes/:id/mensajes` | Enviar mensaje al participante de la solicitud |
 | `PUT` | `/api/solicitudes/:id/estado` | Cambiar estado |
 | `DELETE` | `/api/solicitudes/:id` | Eliminar solicitud |
 
@@ -383,6 +389,7 @@ Todos los datos de la plataforma se almacenan en la base de datos del backend, *
 | Usuarios (clientes y proveedores) | Base de datos del backend |
 | Servicios publicados | Base de datos del backend |
 | Solicitudes | Base de datos del backend |
+| Conversaciones de solicitudes | Base de datos del backend (`mensajes_solicitud`) |
 | Calificaciones | Base de datos del backend |
 | Categorías | Base de datos del backend |
 
@@ -466,3 +473,20 @@ Los permisos de ubicación se solicitan en tiempo de ejecución la primera vez q
 - Login y registro con JWT persistido en DataStore
 - `SessionViewModel` compartido en toda la app
 - Pantalla de perfil con edición y cierre de sesión
+### v1.5 — Solicitudes programadas, chat e historial de tarifa
+- La solicitud exige fecha y hora futura; el proveedor y el cliente ven el contador tras la aceptación.
+- Las fechas de servicio se presentan en la zona horaria de Colombia (`America/Bogota`), independientemente de la configuración del emulador.
+- Chat de cliente/proveedor por solicitud, integrado con **Navigation Compose** mediante `NavHost` y la ruta `chat_solicitud/{solicitudId}`.
+- La tarifa se copia a la solicitud al crearla para mantener ingresos e historial estables aunque se edite el servicio.
+- Los errores HTTP muestran el detalle enviado por la API, incluyendo el caso de servicio que ya tiene reseña.
+
+### Compatibilidad con el backend
+
+Esta versión requiere el backend Urbify con:
+
+- columnas `solicitudes.tarifa_acordada` y `solicitudes.tipo_tarifa_acordada`;
+- tabla `mensajes_solicitud`;
+- rutas `/api/solicitudes/:id/mensajes`;
+- validación de `fecha_servicio` futura.
+
+Después de actualizar el backend, ejecuta `cd backend && npm run migrate`.

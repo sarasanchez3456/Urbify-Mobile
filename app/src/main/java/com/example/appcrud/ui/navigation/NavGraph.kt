@@ -44,6 +44,9 @@ object Routes {
     const val EDITAR_SERVICIO = "editar_servicio/{idServicio}"
     const val DETALLE_SOLICITUD = "detalle_solicitud/{solicitudId}/{esProveedor}"
 
+    const val CHAT_SOLICITUD = "chat_solicitud/{solicitudId}"
+    fun chatSolicitud(solicitudId: Int) = "chat_solicitud/$solicitudId"
+
     fun catalogo(query: String = "", categoriaId: Int = -1) =
         "catalogo?query=${Uri.encode(query)}&categoriaId=$categoriaId"
 
@@ -397,11 +400,16 @@ fun AppNavGraph(
                     solicitudId = solicitudId,
                     esProveedor = esProveedor,
                     onBack = { navController.popBackStack() },
+                    onChat = { id -> navController.navigate(Routes.chatSolicitud(id)) },
                     onCalificar = { idSolicitud, idProveedor ->
                         navController.navigate(Routes.calificar(idSolicitud, idProveedor))
                     }
                 )
             }
+            composable(Routes.CHAT_SOLICITUD, arguments = listOf(navArgument("solicitudId") { type = NavType.IntType })) { entry ->
+                ChatSolicitudScreen(entry.arguments?.getInt("solicitudId") ?: 0) { navController.popBackStack() }
+            }
+
         }
     }
 }
