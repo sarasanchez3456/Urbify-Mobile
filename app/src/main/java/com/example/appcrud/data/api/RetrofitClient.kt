@@ -1,6 +1,7 @@
 package com.example.appcrud.data.api
 
 import com.example.appcrud.BuildConfig
+import com.example.appcrud.data.session.SessionExpiredNotifier
 import com.example.appcrud.data.session.TokenManager
 import com.example.appcrud.data.session.SessionEvents
 import com.google.gson.GsonBuilder
@@ -43,6 +44,20 @@ object RetrofitClient {
         level = httpLoggingLevel(BuildConfig.ENABLE_HTTP_LOGGING)
     }
 
+    // 401 en login/registro es una credencial inválida (flujo normal, lo
+    // maneja AuthViewModel). Un 401 en cualquier otro endpoint significa que
+    // el token guardado ya no es válido: se lo tratamos como expiración de
+    // sesión global en vez de dejar que cada pantalla lo reporte por su cuenta.
+    private val sessionExpiredInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val response = chain.proceed(request)
+        val path = request.url.encodedPath
+        if (response.code == 401 && !path.endsWith("/auth/login") && !path.endsWith("/auth/registro")) {
+            SessionExpiredNotifier.signal()
+        }
+        response
+    }
+
     // Nota: se eliminó el "charsetInterceptor" que intentaba reparar mojibake
     // re-decodificando el cuerpo como ISO-8859-1. Corrompía cualquier carácter
     // fuera de latin-1 (emojis, €, –) y se disparaba con texto legítimo que
@@ -50,6 +65,7 @@ object RetrofitClient {
     // `SET NAMES utf8mb4` y datos reparados).
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(authInterceptor)
+        .addInterceptor(sessionExpiredInterceptor)
         .addInterceptor(logging)
         .build()
 

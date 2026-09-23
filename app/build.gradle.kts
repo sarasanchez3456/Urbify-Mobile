@@ -131,10 +131,24 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // minSdk 24 no trae java.time (API 26+); MisSolicitudesClienteScreen
+        // lo usa para formatear fechas, así que se desugariza en vez de
+        // reescribirlo con SimpleDateFormat.
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    // Sin esto, cualquier llamada a android.util.Log (u otro método del SDK
+    // sin mockear) en un test unitario puro (no Robolectric) lanza
+    // "Method ... not mocked". isReturnDefaultValues hace que esos stubs
+    // devuelvan su valor por defecto (false/0/null) en vez de tirar.
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
     }
 
     // mockk-android trae transitivamente JUnit 5 (jupiter), que duplica
@@ -249,6 +263,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     implementation(libs.play.services.location)
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)

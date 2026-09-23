@@ -32,8 +32,29 @@ class SessionViewModel @JvmOverloads constructor(
     val rol: String? get() = _state.value.usuario?.rol
     val idUsuario: Int? get() = _state.value.usuario?.idUsuario
 
+    // Se intenta como máximo una vez por instancia de este ViewModel (vive
+    // mientras dure la Activity): alcanza para renovar el JWT al abrir la
+    // app sin reintentar en cada recomposición de HOME.
+    private var tokenRenovadoOIntentado = false
+
     fun setSession(usuario: Usuario) {
         _state.value = SessionState(usuario = usuario)
+    }
+
+    /** Renueva el JWT en segundo plano para que una sesión activa no se corte por expiración. */
+    fun renovarSesionSiHaceFalta() {
+        if (tokenRenovadoOIntentado || _state.value.usuario == null) return
+        tokenRenovadoOIntentado = true
+        viewModelScope.launch {
+            try {
+                val respuesta = api.refresh()
+                TokenManager.saveToken(getApplication(), respuesta.token)
+            } catch (_: Exception) {
+                // Silencioso: si falla (por ejemplo sin red), la sesión sigue
+                // con el token actual hasta que vuelva a expirar; un 401 real
+                // ya lo maneja SessionExpiredNotifier.
+            }
+        }
     }
 
     fun cargarPerfil() {

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
@@ -21,18 +22,23 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
+
+private const val MENSAJE_MAX_LENGTH = 500
+private const val DIRECCION_MAX_LENGTH = 200
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateSolicitudScreen(
     idServicio: Int,
     tituloServicio: String,
+    idProveedor: Int,
     onBack: () -> Unit,
     onSuccess: () -> Unit,
     viewModel: SolicitudViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var mensaje by remember { mutableStateOf("") }
-    var direccion by remember { mutableStateOf("") }
+    var mensaje by rememberSaveable { mutableStateOf("") }
+    var direccion by rememberSaveable { mutableStateOf("") }
 
     val context = LocalContext.current
     var fechaProgramadaMillis by remember { mutableStateOf<Long?>(null) }
@@ -124,8 +130,15 @@ fun CreateSolicitudScreen(
 
             OutlinedTextField(
                 value = mensaje,
-                onValueChange = { mensaje = it },
+                onValueChange = { if (it.length <= MENSAJE_MAX_LENGTH) mensaje = it },
                 label = { Text(stringResource(R.string.mensaje_descripcion)) },
+                supportingText = {
+                    Text(
+                        stringResource(R.string.contador_caracteres, mensaje.length, MENSAJE_MAX_LENGTH),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
@@ -148,8 +161,15 @@ fun CreateSolicitudScreen(
 
             OutlinedTextField(
                 value = direccion,
-                onValueChange = { direccion = it },
+                onValueChange = { if (it.length <= DIRECCION_MAX_LENGTH) direccion = it },
                 label = { Text(stringResource(R.string.direccion_servicio)) },
+                supportingText = {
+                    Text(
+                        stringResource(R.string.contador_caracteres, direccion.length, DIRECCION_MAX_LENGTH),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -170,6 +190,7 @@ fun CreateSolicitudScreen(
                 onClick = {
                     viewModel.createSolicitud(
                         idServicio = idServicio,
+                        idProveedor = idProveedor,
                         mensaje = mensaje,
                         direccion = direccion,
                         fechaServicio = fechaProgramada,

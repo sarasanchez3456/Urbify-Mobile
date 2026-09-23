@@ -5,7 +5,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -142,6 +144,20 @@ fun ElegirDireccionScreen(
                     .size(44.dp)
                     .offset(y = (-22).dp),
             )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SmallFloatingActionButton(onClick = { mapView.controller.zoomIn() }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.acercar_mapa))
+                }
+                SmallFloatingActionButton(onClick = { mapView.controller.zoomOut() }) {
+                    Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.alejar_mapa))
+                }
+            }
 
             Surface(
                 modifier = Modifier

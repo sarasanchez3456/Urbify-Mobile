@@ -51,6 +51,8 @@ import com.example.appcrud.R
 import com.example.appcrud.data.location.haversineKm
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.ui.components.NotificacionBadge
+import com.example.appcrud.ui.viewmodel.NotificacionViewModel
 import com.example.appcrud.ui.viewmodel.ProveedorHomeViewModel
 import com.example.appcrud.ui.viewmodel.SessionViewModel
 import java.text.SimpleDateFormat
@@ -83,14 +85,17 @@ fun ProveedorHomeScreen(
     onGestionarServicios: () -> Unit = {},
     onSolicitudClick: (Solicitud) -> Unit = {},
     viewModel: ProveedorHomeViewModel = viewModel(),
+    notificacionViewModel: NotificacionViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val sessionState by sessionViewModel.state.collectAsState()
+    val notificacionUiState by notificacionViewModel.uiState.collectAsState()
     val usuario = sessionState.usuario
     val defaultNombre = stringResource(R.string.proveedor)
     val defaultOficio = stringResource(R.string.proveedor)
 
     LaunchedEffect(usuario?.idUsuario) { viewModel.cargar(usuario?.idUsuario) }
+    LaunchedEffect(Unit) { notificacionViewModel.cargar() }
 
     val provLat = usuario?.latitud
     val provLng = usuario?.longitud
@@ -109,6 +114,7 @@ fun ProveedorHomeScreen(
             HeaderProveedor(
                 nombre = usuario?.nombre?.trim().orEmpty().ifBlank { defaultNombre }.replaceFirstChar { it.uppercase() },
                 oficio = usuario?.oficio?.trim().orEmpty().ifBlank { defaultOficio },
+                notificacionesSinLeer = notificacionUiState.noLeidas,
                 onNotificaciones = onNotificaciones,
             )
             TarjetaDisponibilidad(
@@ -208,7 +214,7 @@ fun ProveedorHomeScreen(
 
 /* ==============================  Header  ============================== */
 @Composable
-private fun HeaderProveedor(nombre: String, oficio: String, onNotificaciones: () -> Unit) {
+private fun HeaderProveedor(nombre: String, oficio: String, notificacionesSinLeer: Int, onNotificaciones: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -268,15 +274,20 @@ private fun HeaderProveedor(nombre: String, oficio: String, onNotificaciones: ()
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .clickable(onClick = onNotificaciones),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .clickable(onClick = onNotificaciones),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                    if (notificacionesSinLeer > 0) {
+                        NotificacionBadge(count = notificacionesSinLeer, modifier = Modifier.align(Alignment.TopEnd))
+                    }
                 }
             }
             Spacer(Modifier.height(10.dp))

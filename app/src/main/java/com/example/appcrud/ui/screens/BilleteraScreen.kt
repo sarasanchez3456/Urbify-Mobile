@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.repository.SolicitudRepository
+import com.example.appcrud.ui.components.EmptyState
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -99,7 +101,11 @@ fun BilleteraScreen(onBack: () -> Unit = {}) {
                     CircularProgressIndicator(color = AzulPrimario)
                 }
                 error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
-                completadas.isEmpty() -> Text(stringResource(R.string.no_trabajos_completados), color = TextoTenue)
+                completadas.isEmpty() -> EmptyState(
+                    icon = Icons.Default.AccountBalanceWallet,
+                    title = stringResource(R.string.billetera_vacia_titulo),
+                    subtitle = stringResource(R.string.billetera_vacia_subtitulo)
+                )
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(completadas) { s ->
                         Surface(

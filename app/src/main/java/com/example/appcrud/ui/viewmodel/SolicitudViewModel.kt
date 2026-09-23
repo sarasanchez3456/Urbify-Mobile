@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.api.aMensajeUsuario
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.network.NetworkResult
+import com.example.appcrud.data.repository.CalificacionRepository
 import com.example.appcrud.data.repository.SolicitudRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,10 +24,12 @@ data class SolicitudUiState(
     val successMessage: String? = null,
     /** Ids de solicitudes con un cambio de estado en curso (spinner por tarjeta). */
     val procesando: Set<Int> = emptySet(),
+    val solicitudesCalificadas: Set<Int> = emptySet(),
 )
 
 class SolicitudViewModel @JvmOverloads constructor(
-    private val repository: SolicitudRepository = SolicitudRepository()
+    private val repository: SolicitudRepository = SolicitudRepository(),
+    private val calificacionRepository: CalificacionRepository = CalificacionRepository()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SolicitudUiState())
@@ -74,41 +77,45 @@ class SolicitudViewModel @JvmOverloads constructor(
 
     private fun cargar(bloque: suspend () -> List<Solicitud>) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                _uiState.value = _uiState.value.copy(solicitudes = bloque(), isLoading = false)
+                _uiState.update { it.copy(solicitudes = bloque(), isLoading = false) }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.aMensajeUsuario(),
-                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.aMensajeUsuario(),
+                    )
+                }
             }
         }
     }
 
     fun createSolicitud(
         idServicio: Int,
+        idProveedor: Int,
         mensaje: String,
         direccion: String,
         fechaServicio: String,
         onSuccess: () -> Unit,
     ) {
         if (_uiState.value.isLoading) return
-        _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
                 repository.createSolicitud(
                     Solicitud(
                         idServicio = idServicio,
+                        idProveedor = idProveedor,
                         mensaje = mensaje,
                         direccion = direccion,
                         fechaServicio = fechaServicio,
                     )
                 )
-                _uiState.value = _uiState.value.copy(isLoading = false, successMessage = "Solicitud creada exitosamente")
+                _uiState.update { it.copy(isLoading = false, successMessage = "Solicitud creada exitosamente") }
                 onSuccess()
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.aMensajeUsuario())
+                _uiState.update { it.copy(isLoading = false, error = e.aMensajeUsuario()) }
             }
         }
     }
@@ -168,6 +175,26 @@ class SolicitudViewModel @JvmOverloads constructor(
     }
 
     fun clearMessages() {
-        _uiState.value = _uiState.value.copy(error = null, successMessage = null)
+        _uiState.update { it.copy(error = null, successMessage = null) }
+    }
+
+    fun verificarCalificaciones(solicitudes: List<Solicitud>) {
+        viewModelScope.launch {
+            val calificadas = mutableSetOf<Int>()
+            for (solicitud in solicitudes) {
+                val solicitudId = solicitud.idSolicitud ?: continue
+                val proveedorId = solicitud.idProveedor ?: continue
+                try {
+                    if (calificacionRepository.existeCalificacion(solicitudId, proveedorId)) {
+                        calificadas.add(solicitudId)
+                    }
+                } catch (_: Exception) { }
+            }
+            _uiState.update { it.copy(solicitudesCalificadas = calificadas) }
+        }
+    }
+
+    fun estaCalificada(solicitudId: Int): Boolean {
+        return _uiState.value.solicitudesCalificadas.contains(solicitudId)
     }
 }

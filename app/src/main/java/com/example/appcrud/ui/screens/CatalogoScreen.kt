@@ -34,7 +34,7 @@ import com.example.appcrud.ui.viewmodel.CatalogoViewModel
 @Composable
 fun CatalogoScreen(
     onBack: () -> Unit,
-    onServicioSelected: (idServicio: Int, tituloServicio: String) -> Unit,
+    onServicioSelected: (idServicio: Int, tituloServicio: String, idProveedor: Int) -> Unit,
     queryInicial: String = "",
     categoriaIdInicial: Int = -1,
     viewModel: CatalogoViewModel = viewModel()
@@ -174,7 +174,7 @@ private fun ServiciosPorCategoria(
     categoria: Categoria,
     servicios: List<Servicio>,
     onBack: () -> Unit,
-    onServicioSelected: (Int, String) -> Unit
+    onServicioSelected: (Int, String, Int) -> Unit
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Row(
@@ -212,7 +212,7 @@ private fun ServiciosPorCategoria(
 @Composable
 private fun ServiciosBusqueda(
     servicios: List<Servicio>,
-    onServicioSelected: (Int, String) -> Unit
+    onServicioSelected: (Int, String, Int) -> Unit
 ) {
     if (servicios.isEmpty()) {
         EmptyState(
@@ -236,7 +236,7 @@ private fun ServiciosBusqueda(
 @Composable
 private fun ServicioCard(
     servicio: Servicio,
-    onServicioSelected: (Int, String) -> Unit
+    onServicioSelected: (Int, String, Int) -> Unit
 ) {
     val initials = servicio.nombreProveedor?.let { proveedor ->
         proveedor.split(" ").take(2).joinToString("") { it.first().uppercase() }
@@ -248,7 +248,8 @@ private fun ServicioCard(
             .clickable {
                 onServicioSelected(
                     servicio.idServicio ?: 0,
-                    servicio.titulo
+                    servicio.titulo,
+                    servicio.idProveedor ?: 0
                 )
             }
     ) {

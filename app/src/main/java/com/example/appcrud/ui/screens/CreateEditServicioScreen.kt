@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,9 +38,9 @@ fun CreateEditServicioScreen(
         if (uiState.success) onSuccess()
     }
 
-    var titulo by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
-    var precioTexto by remember { mutableStateOf("") }
+    var titulo by rememberSaveable { mutableStateOf("") }
+    var descripcion by rememberSaveable { mutableStateOf("") }
+    var precioTexto by rememberSaveable { mutableStateOf("") }
     var categoriaSeleccionada by remember { mutableStateOf<com.example.appcrud.data.model.Categoria?>(null) }
     var dropdownExpanded by remember { mutableStateOf(false) }
     var mostrarNuevaCategoria by remember { mutableStateOf(false) }

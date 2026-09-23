@@ -9,8 +9,12 @@ import com.example.appcrud.data.model.LoginRequest
 import com.example.appcrud.data.model.EnviarMensajeRequest
 import com.example.appcrud.data.model.MensajeSolicitud
 import com.example.appcrud.data.model.MensajeResponse
+import com.example.appcrud.data.model.Notificacion
+import com.example.appcrud.data.model.OlvidoContrasenaRequest
 import com.example.appcrud.data.model.ProveedorCercano
+import com.example.appcrud.data.model.RefreshResponse
 import com.example.appcrud.data.model.RegistroRequest
+import com.example.appcrud.data.model.RestablecerContrasenaRequest
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.model.Solicitud
 import com.example.appcrud.data.model.Stats
@@ -25,6 +29,15 @@ interface ApiService {
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
+
+    @POST("auth/refresh")
+    suspend fun refresh(): RefreshResponse
+
+    @POST("auth/olvido-contrasena")
+    suspend fun olvidoContrasena(@Body request: OlvidoContrasenaRequest): MensajeResponse
+
+    @POST("auth/restablecer-contrasena")
+    suspend fun restablecerContrasena(@Body request: RestablecerContrasenaRequest): MensajeResponse
 
     @GET("auth/perfil")
     suspend fun getPerfil(): Usuario
@@ -122,4 +135,14 @@ interface ApiService {
     // Stats
     @GET("stats")
     suspend fun getStats(): Stats
+
+    // Notificaciones
+    @GET("notificaciones")
+    suspend fun getNotificaciones(): List<Notificacion>
+
+    @PUT("notificaciones/{id}/leer")
+    suspend fun marcarNotificacionLeida(@Path("id") id: Int): MensajeResponse
+
+    @DELETE("notificaciones/{id}")
+    suspend fun deleteNotificacion(@Path("id") id: Int)
 }

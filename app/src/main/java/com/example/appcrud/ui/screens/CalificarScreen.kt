@@ -9,13 +9,17 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.appcrud.R
 import com.example.appcrud.ui.viewmodel.CalificacionViewModel
+
+private const val COMENTARIO_MAX_LENGTH = 500
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,8 +31,9 @@ fun CalificarScreen(
     viewModel: CalificacionViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var puntuacion by remember { mutableIntStateOf(0) }
-    var comentario by remember { mutableStateOf("") }
+    var puntuacion by rememberSaveable { mutableIntStateOf(0) }
+    var comentario by rememberSaveable { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.successMessage) {
         if (uiState.successMessage != null) {
@@ -37,7 +42,15 @@ fun CalificarScreen(
         }
     }
 
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessages()
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.calificar_servicio_title)) },
@@ -97,7 +110,7 @@ fun CalificarScreen(
                         Icon(
                             imageVector = if (i <= puntuacion) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = stringResource(R.string.estrellas, i),
-                            tint = if (i <= puntuacion) MaterialTheme.colorScheme.primary
+                            tint = if (i <= puntuacion) Color(0xFFFFC107)
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(48.dp)
                         )
@@ -125,23 +138,21 @@ fun CalificarScreen(
 
             OutlinedTextField(
                 value = comentario,
-                onValueChange = { comentario = it },
+                onValueChange = { if (it.length <= COMENTARIO_MAX_LENGTH) comentario = it },
                 label = { Text(stringResource(R.string.comentario_opcional)) },
+                supportingText = {
+                    Text(
+                        stringResource(R.string.contador_caracteres, comentario.length, COMENTARIO_MAX_LENGTH),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
             )
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            uiState.error?.let { error ->
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

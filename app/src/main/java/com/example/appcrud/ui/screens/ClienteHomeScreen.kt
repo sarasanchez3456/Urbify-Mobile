@@ -58,7 +58,9 @@ import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoSolicitud
 import com.example.appcrud.data.model.Servicio
 import com.example.appcrud.data.model.Solicitud
+import com.example.appcrud.ui.components.NotificacionBadge
 import com.example.appcrud.ui.viewmodel.HomeViewModel
+import com.example.appcrud.ui.viewmodel.NotificacionViewModel
 import com.example.appcrud.ui.viewmodel.SessionViewModel
 
 /* ==========================  Paleta (marketplace moderno)  ========================== */
@@ -93,15 +95,70 @@ fun ClienteHomeScreen(
     onVerMisSolicitudes: () -> Unit = {},
     onServicioClick: (Servicio) -> Unit = {},
     onSolicitudClick: (Solicitud) -> Unit = {},
+    onVerServiciosDestacados: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(),
+    notificacionViewModel: NotificacionViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val sessionState by sessionViewModel.state.collectAsState()
+    val notificacionUiState by notificacionViewModel.uiState.collectAsState()
     val usuario = sessionState.usuario
     val defaultNombre = stringResource(R.string.cliente)
     val defaultDireccion = stringResource(R.string.elige_tu_direccion)
+    var showFilterSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.cargarDatos() }
+    LaunchedEffect(Unit) { notificacionViewModel.cargar() }
+
+    if (showFilterSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFilterSheet = false },
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.categorias),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                uiState.categorias.forEach { categoria ->
+                    Surface(
+                        onClick = {
+                            showFilterSheet = false
+                            onCategoriaClick(categoria)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                iconoCategoria(categoria.nombre),
+                                contentDescription = null,
+                                tint = AzulPrimario,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = categoria.nombre,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -112,6 +169,7 @@ fun ClienteHomeScreen(
         ClientHeader(
             nombre = usuario?.nombre?.trim().orEmpty().ifBlank { defaultNombre }.replaceFirstChar { it.uppercase() },
             direccion = usuario?.direccion?.trim().orEmpty().ifBlank { defaultDireccion },
+            notificacionesSinLeer = notificacionUiState.noLeidas,
             onElegirDireccion = onElegirDireccion,
             onNotificaciones = onNotificaciones,
         )
@@ -122,7 +180,7 @@ fun ClienteHomeScreen(
         ) {
             Spacer(Modifier.height(4.dp))
 
-            SearchBar(onBuscar = onBuscar, onFiltros = onVerCatalogo)
+            SearchBar(onBuscar = onBuscar, onFiltros = { showFilterSheet = true })
 
             when {
                 uiState.error != null -> ErrorCard(onReintentar = viewModel::cargarDatos)
@@ -142,7 +200,7 @@ fun ClienteHomeScreen(
 
                     FeaturedServicesSection(
                         servicios = uiState.serviciosDestacados,
-                        onVerTodos = onVerCatalogo,
+                        onVerTodos = onVerServiciosDestacados,
                         onServicioClick = onServicioClick,
                     )
 
@@ -168,6 +226,7 @@ fun ClienteHomeScreen(
 private fun ClientHeader(
     nombre: String,
     direccion: String,
+    notificacionesSinLeer: Int,
     onElegirDireccion: () -> Unit,
     onNotificaciones: () -> Unit,
 ) {
@@ -238,15 +297,20 @@ private fun ClientHeader(
                         )
                     }
                 }
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .clickable(onClick = onNotificaciones),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .clickable(onClick = onNotificaciones),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.notificaciones), tint = Color.White, modifier = Modifier.size(20.dp))
+                    }
+                    if (notificacionesSinLeer > 0) {
+                        NotificacionBadge(count = notificacionesSinLeer, modifier = Modifier.align(Alignment.TopEnd))
+                    }
                 }
             }
 

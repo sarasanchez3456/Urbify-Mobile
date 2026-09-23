@@ -21,6 +21,7 @@ mockwebserver = "4.12.0"
 mockk = "1.13.13"
 byteBuddy = "1.17.5"
 securityCrypto = "1.1.0-alpha06"
+desugarJdkLibs = "2.1.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -55,6 +56,7 @@ mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "moc
 byte-buddy = { group = "net.bytebuddy", name = "byte-buddy", version.ref = "byteBuddy" }
 byte-buddy-agent = { group = "net.bytebuddy", name = "byte-buddy-agent", version.ref = "byteBuddy" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

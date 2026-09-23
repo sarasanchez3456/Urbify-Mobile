@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -195,7 +196,7 @@ private fun EditarCalificacionDialog(
                                 Icon(
                                     imageVector = if (i <= puntuacion) Icons.Default.Star else Icons.Default.StarBorder,
                                     contentDescription = stringResource(R.string.estrellas, i),
-                                    tint = if (i <= puntuacion) MaterialTheme.colorScheme.primary
+                                    tint = if (i <= puntuacion) Color(0xFFFFC107)
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(28.dp)
                                 )
@@ -243,7 +244,7 @@ private fun PromedioCard(calificaciones: List<Calificacion>) {
                     Icon(
                         imageVector = if (i <= promedio.toInt()) Icons.Default.Star else Icons.Default.StarBorder,
                         contentDescription = null,
-                        tint = if (i <= promedio.toInt()) MaterialTheme.colorScheme.primary
+                        tint = if (i <= promedio.toInt()) Color(0xFFFFC107)
                         else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f),
                         modifier = Modifier.size(24.dp)
                     )
@@ -281,7 +282,7 @@ private fun CalificacionCard(
                         Icon(
                             imageVector = if (i <= calificacion.puntuacion) Icons.Default.Star else Icons.Default.StarBorder,
                             contentDescription = null,
-                            tint = if (i <= calificacion.puntuacion) MaterialTheme.colorScheme.primary
+                            tint = if (i <= calificacion.puntuacion) Color(0xFFFFC107)
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )

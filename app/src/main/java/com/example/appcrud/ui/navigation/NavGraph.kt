@@ -21,6 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.session.SessionEvents
+import com.example.appcrud.data.session.SessionExpiredNotifier
 import com.example.appcrud.ui.screens.*
 import com.example.appcrud.ui.viewmodel.SessionViewModel
 import kotlinx.coroutines.flow.collect
@@ -29,11 +30,12 @@ object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
     const val CATALOGO = "catalogo?query={query}&categoriaId={categoriaId}"
+    const val SERVICIOS_DESTACADOS = "servicios_destacados"
     const val PROVEEDORES_CERCANOS = "proveedores_cercanos"
     const val ELEGIR_DIRECCION = "elegir_direccion"
     const val BILLETERA = "billetera"
     const val STATS = "stats"
-    const val CREATE_SOLICITUD = "create_solicitud/{idServicio}/{tituloServicio}"
+    const val CREATE_SOLICITUD = "create_solicitud/{idServicio}/{tituloServicio}/{idProveedor}"
     const val MIS_SOLICITUDES_CLIENTE = "mis_solicitudes_cliente"
     const val MIS_SOLICITUDES_PROVEEDOR = "mis_solicitudes_proveedor"
     const val CALIFICAR = "calificar/{idSolicitud}/{idProveedor}"
@@ -43,6 +45,8 @@ object Routes {
     const val CREAR_SERVICIO = "crear_servicio"
     const val EDITAR_SERVICIO = "editar_servicio/{idServicio}"
     const val DETALLE_SOLICITUD = "detalle_solicitud/{solicitudId}/{esProveedor}"
+    const val NOTIFICACIONES = "notificaciones"
+    const val RECUPERAR_CONTRASENA = "recuperar_contrasena"
 
     const val CHAT_SOLICITUD = "chat_solicitud/{solicitudId}"
     fun chatSolicitud(solicitudId: Int) = "chat_solicitud/$solicitudId"
@@ -50,8 +54,8 @@ object Routes {
     fun catalogo(query: String = "", categoriaId: Int = -1) =
         "catalogo?query=${Uri.encode(query)}&categoriaId=$categoriaId"
 
-    fun createSolicitud(idServicio: Int, tituloServicio: String) =
-        "create_solicitud/$idServicio/${Uri.encode(tituloServicio)}"
+    fun createSolicitud(idServicio: Int, tituloServicio: String, idProveedor: Int) =
+        "create_solicitud/$idServicio/${java.net.URLEncoder.encode(tituloServicio, "UTF-8")}/$idProveedor"
 
     fun calificar(idSolicitud: Int, idProveedor: Int) =
         "calificar/$idSolicitud/$idProveedor"
@@ -103,6 +107,23 @@ fun AppNavGraph(
 
     val showBottomBar = currentRoute in bottomBarRoutes
 
+    // Sesión expirada (401 detectado en cualquier pantalla): cerramos sesión
+    // y volvemos a LOGIN desde un único lugar, para que el bottom bar y
+    // cualquier pantalla con llamadas async pendientes no queden en un
+    // estado intermedio inconsistente.
+    LaunchedEffect(Unit) {
+        SessionExpiredNotifier.events.collect {
+            if (sessionViewModel.usuario != null) {
+                sessionViewModel.logout()
+            }
+            if (navController.currentDestination?.route != Routes.LOGIN) {
+                navController.navigate(Routes.LOGIN) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
+
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
@@ -143,7 +164,15 @@ fun AppNavGraph(
                             // ni ViewModels de la sesión anterior.
                             popUpTo(0) { inclusive = true }
                         }
-                    }
+                    },
+                    onForgotPassword = { navController.navigate(Routes.RECUPERAR_CONTRASENA) }
+                )
+            }
+
+            composable(Routes.RECUPERAR_CONTRASENA) {
+                RecuperarContrasenaScreen(
+                    onBack = { navController.popBackStack() },
+                    onCompletado = { navController.popBackStack() }
                 )
             }
 
@@ -169,6 +198,7 @@ fun AppNavGraph(
                         CircularProgressIndicator()
                     }
                 } else if (usuarioSesion.rol == Rol.CLIENTE) {
+                    LaunchedEffect(Unit) { sessionViewModel.renovarSesionSiHaceFalta() }
                     ClienteHomeScreen(
                         sessionViewModel = sessionViewModel,
                         onBuscar = abrirCatalogoQuery,
@@ -176,6 +206,7 @@ fun AppNavGraph(
                         onVerCatalogo = { navController.navigate(Routes.catalogo()) },
                         onVerMapa = { navController.navigate(Routes.PROVEEDORES_CERCANOS) },
                         onElegirDireccion = { navController.navigate(Routes.ELEGIR_DIRECCION) },
+                        onNotificaciones = { navController.navigate(Routes.NOTIFICACIONES) },
                         onVerMisSolicitudes = {
                             navController.navigate(Routes.MIS_SOLICITUDES_CLIENTE) {
                                 popUpTo(Routes.HOME) { saveState = true }
@@ -185,19 +216,23 @@ fun AppNavGraph(
                         },
                         onServicioClick = { servicio ->
                             val idServicio = servicio.idServicio
-                            if (idServicio != null) {
-                                navController.navigate(Routes.createSolicitud(idServicio, servicio.titulo))
+                            val idProveedor = servicio.idProveedor
+                            if (idServicio != null && idProveedor != null) {
+                                navController.navigate(Routes.createSolicitud(idServicio, servicio.titulo, idProveedor))
                             }
                         },
                         onSolicitudClick = { solicitud ->
                             solicitud.idSolicitud?.let { id ->
                                 navController.navigate(Routes.detalleSolicitud(id, esProveedor = false))
                             }
-                        }
+                        },
+                        onVerServiciosDestacados = { navController.navigate(Routes.SERVICIOS_DESTACADOS) }
                     )
                 } else {
+                    LaunchedEffect(Unit) { sessionViewModel.renovarSesionSiHaceFalta() }
                     ProveedorHomeScreen(
                         sessionViewModel = sessionViewModel,
+                        onNotificaciones = { navController.navigate(Routes.NOTIFICACIONES) },
                         onVerTrabajos = {
                             navController.navigate(Routes.MIS_SOLICITUDES_PROVEEDOR) {
                                 popUpTo(Routes.HOME) { saveState = true }
@@ -226,11 +261,20 @@ fun AppNavGraph(
                 val categoriaId = backStackEntry.arguments?.getInt("categoriaId") ?: -1
                 CatalogoScreen(
                     onBack = { navController.popBackStack() },
-                    onServicioSelected = { idServicio, titulo ->
-                        navController.navigate(Routes.createSolicitud(idServicio, titulo))
+                    onServicioSelected = { idServicio, titulo, idProveedor ->
+                        navController.navigate(Routes.createSolicitud(idServicio, titulo, idProveedor))
                     },
                     queryInicial = query,
                     categoriaIdInicial = categoriaId
+                )
+            }
+
+            composable(Routes.SERVICIOS_DESTACADOS) {
+                ServiciosDestacadosScreen(
+                    onBack = { navController.popBackStack() },
+                    onServicioSelected = { idServicio, titulo, idProveedor ->
+                        navController.navigate(Routes.createSolicitud(idServicio, titulo, idProveedor))
+                    }
                 )
             }
 
@@ -257,18 +301,27 @@ fun AppNavGraph(
                 StatsScreen(onBack = { navController.popBackStack() })
             }
 
+            composable(Routes.NOTIFICACIONES) {
+                NotificacionesScreen(onBack = { navController.popBackStack() })
+            }
+
             composable(
                 route = Routes.CREATE_SOLICITUD,
                 arguments = listOf(
                     navArgument("idServicio") { type = NavType.IntType },
-                    navArgument("tituloServicio") { type = NavType.StringType }
+                    navArgument("tituloServicio") { type = NavType.StringType },
+                    navArgument("idProveedor") { type = NavType.IntType }
                 )
             ) { backStackEntry ->
                 val idServicio = backStackEntry.arguments?.getInt("idServicio") ?: 0
-                val tituloServicio = Uri.decode(backStackEntry.arguments?.getString("tituloServicio") ?: "")
+                val tituloServicio = java.net.URLDecoder.decode(
+                    backStackEntry.arguments?.getString("tituloServicio") ?: "", "UTF-8"
+                )
+                val idProveedor = backStackEntry.arguments?.getInt("idProveedor") ?: 0
                 CreateSolicitudScreen(
                     idServicio = idServicio,
                     tituloServicio = tituloServicio,
+                    idProveedor = idProveedor,
                     onBack = { navController.popBackStack() },
                     onSuccess = {
                         solicitudesRefresh++
@@ -318,6 +371,7 @@ fun AppNavGraph(
                     onBack = { navController.popBackStack() },
                     onSuccess = {
                         calificacionesRefresh++
+                        solicitudesRefresh++
                         navController.popBackStack()
                     }
                 )

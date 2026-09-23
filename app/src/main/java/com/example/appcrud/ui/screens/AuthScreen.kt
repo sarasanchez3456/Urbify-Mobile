@@ -26,6 +26,7 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +63,7 @@ private fun esCorreoValido(correo: String): Boolean =
 @Composable
 fun AuthScreen(
     onAuthSuccess: (Usuario) -> Unit,
+    onForgotPassword: () -> Unit = {},
     viewModel: AuthViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -116,7 +119,11 @@ fun AuthScreen(
         }
 
         if (tab == 0) {
-            LoginForm(uiState.isLoading) { correo, pass -> viewModel.login(correo, pass) }
+            LoginForm(
+                isLoading = uiState.isLoading,
+                onForgotPassword = onForgotPassword,
+                onSubmit = { correo, pass -> viewModel.login(correo, pass) }
+            )
         } else {
             RegistroForm(uiState.isLoading) { viewModel.registro(it) }
         }
@@ -126,9 +133,9 @@ fun AuthScreen(
 }
 
 @Composable
-private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
-    var correo by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
+private fun LoginForm(isLoading: Boolean, onForgotPassword: () -> Unit, onSubmit: (String, String) -> Unit) {
+    var correo by rememberSaveable { mutableStateOf("") }
+    var contrasena by rememberSaveable { mutableStateOf("") }
     val correoConError = correo.isNotBlank() && !esCorreoValido(correo)
 
     Column {
@@ -164,19 +171,23 @@ private fun LoginForm(isLoading: Boolean, onSubmit: (String, String) -> Unit) {
             // testTag deja que las pruebas de UI apunten sin ambigüedad.
             modifier = Modifier.testTag("login_submit_button")
         )
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onForgotPassword, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.olvidaste_contrasena))
+        }
     }
 }
 
 @Composable
 private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit) {
-    var nombre by remember { mutableStateOf("") }
-    var apellido by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-    var contrasena by remember { mutableStateOf("") }
-    var telefono by remember { mutableStateOf("") }
-    var direccion by remember { mutableStateOf("") }
-    var rol by remember { mutableStateOf(Rol.CLIENTE) }
-    var oficio by remember { mutableStateOf("") }
+    var nombre by rememberSaveable { mutableStateOf("") }
+    var apellido by rememberSaveable { mutableStateOf("") }
+    var correo by rememberSaveable { mutableStateOf("") }
+    var contrasena by rememberSaveable { mutableStateOf("") }
+    var telefono by rememberSaveable { mutableStateOf("") }
+    var direccion by rememberSaveable { mutableStateOf("") }
+    var rol by rememberSaveable { mutableStateOf(Rol.CLIENTE) }
+    var oficio by rememberSaveable { mutableStateOf("") }
     val correoConError = correo.isNotBlank() && !esCorreoValido(correo)
 
     val camposOk = nombre.isNotBlank() && apellido.isNotBlank() &&

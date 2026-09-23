@@ -21,6 +21,26 @@
     <string name="crear_cuenta">Crear cuenta</string>
     <string name="cuenta_bloqueada">Cuenta bloqueada temporalmente</string>
     <string name="intentar_de_nuevo">Intenta de nuevo en %1$d minuto%2$s</string>
+    <string name="olvidaste_contrasena">¿Olvidaste tu contraseña?</string>
+
+    <!-- Recuperar contraseña -->
+    <string name="recuperar_contrasena_title">Recuperar contraseña</string>
+    <string name="recuperar_contrasena_explicacion">Ingresa tu correo y te enviaremos un código para restablecer tu contraseña.</string>
+    <string name="enviar_codigo">Enviar código</string>
+    <string name="recuperar_contrasena_codigo_enviado">Enviamos un código a %1$s. Ingrésalo junto con tu nueva contraseña.</string>
+    <string name="codigo_verificacion">Código de verificación</string>
+    <string name="nueva_contrasena">Nueva contraseña</string>
+    <string name="confirmar_contrasena">Confirmar contraseña</string>
+    <string name="las_contrasenas_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="restablecer_contrasena">Restablecer contraseña</string>
+    <string name="reenviar_codigo">Reenviar código</string>
+    <string name="contrasena_restablecida">Tu contraseña fue restablecida exitosamente</string>
+    <string name="volver_a_iniciar_sesion">Volver a iniciar sesión</string>
+
+    <!-- Notificaciones -->
+    <string name="sin_notificaciones_titulo">Todavía no tienes notificaciones</string>
+    <string name="sin_notificaciones_subtitulo">Cuando haya novedades sobre tus solicitudes, las vas a ver acá.</string>
+    <string name="eliminar_notificacion">Eliminar notificación</string>
 
     <!-- Home - Cliente -->
     <string name="hola">Hola,</string>
@@ -122,8 +142,6 @@
 
     <!-- Solicitudes - Cliente -->
     <string name="solicitudes">Solicitudes</string>
-    <string name="mis_solicitudes_chip">Mis solicitudes</string>
-    <string name="recibidas">Recibidas</string>
     <string name="no_tienes_solicitudes">No tienes solicitudes aún</string>
     <string name="crea_solicitud_catalogo">Crea una solicitud desde el catálogo</string>
     <string name="proveedor_label">Proveedor: %1$s</string>
@@ -147,6 +165,7 @@
     <string name="mensaje_descripcion">Mensaje / Descripción del trabajo</string>
     <string name="direccion_servicio">Dirección del servicio</string>
     <string name="enviar_solicitud">Enviar Solicitud</string>
+    <string name="contador_caracteres">%1$d/%2$d</string>
 
     <!-- Calificar -->
     <string name="calificar_servicio_title">Calificar servicio</string>
@@ -184,6 +203,8 @@
     <string name="ingresos_totales">Ingresos totales</string>
     <string name="historial">Historial</string>
     <string name="no_trabajos_completados">Todavía no tienes trabajos completados.</string>
+    <string name="billetera_vacia_titulo">Aquí verás tus ingresos</string>
+    <string name="billetera_vacia_subtitulo">Cuando completes tu primer trabajo, el pago aparecerá reflejado en esta pantalla.</string>
 
     <!-- Elegir dirección -->
     <string name="elegir_direccion">Elegir dirección</string>
@@ -192,6 +213,8 @@
     <string name="no_encontrada_direccion">No se encontró esa dirección. Ajusta el texto o mueve el mapa.</string>
     <string name="enviando_a">Enviando a</string>
     <string name="mueve_mapa_escribe">Mueve el mapa o escribe tu dirección</string>
+    <string name="acercar_mapa">Acercar mapa</string>
+    <string name="alejar_mapa">Alejar mapa</string>
     <string name="confirmar_direccion">Confirmar dirección</string>
 
     <!-- Proveedores cercanos -->
