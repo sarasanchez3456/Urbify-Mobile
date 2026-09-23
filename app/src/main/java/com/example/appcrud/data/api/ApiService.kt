@@ -6,6 +6,8 @@ import com.example.appcrud.data.model.CalificacionesProveedorResponse
 import com.example.appcrud.data.model.Categoria
 import com.example.appcrud.data.model.EstadoUpdateRequest
 import com.example.appcrud.data.model.LoginRequest
+import com.example.appcrud.data.model.EnviarMensajeRequest
+import com.example.appcrud.data.model.MensajeSolicitud
 import com.example.appcrud.data.model.MensajeResponse
 import com.example.appcrud.data.model.ProveedorCercano
 import com.example.appcrud.data.model.RegistroRequest
@@ -75,6 +77,13 @@ interface ApiService {
 
     @GET("solicitudes/cliente")
     suspend fun getSolicitudesCliente(): List<Solicitud>
+
+    @GET("solicitudes/{id}/mensajes")
+    suspend fun getMensajesSolicitud(@Path("id") id: Int): List<MensajeSolicitud>
+
+    @POST("solicitudes/{id}/mensajes")
+    suspend fun enviarMensajeSolicitud(@Path("id") id: Int, @Body mensaje: EnviarMensajeRequest): MensajeResponse
+
 
     @GET("solicitudes/proveedor")
     suspend fun getSolicitudesProveedor(): List<Solicitud>

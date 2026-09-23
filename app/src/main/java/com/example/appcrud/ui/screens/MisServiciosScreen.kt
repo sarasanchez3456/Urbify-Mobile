@@ -31,7 +31,7 @@ fun MisServiciosScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var servicioAEliminar by remember { mutableStateOf<Servicio?>(null) }
 
-    val defaultError = stringResource(R.string.error_prefijo, "")
+    val formattedError = uiState.error?.let { stringResource(R.string.error_prefijo, it) }
 
     LaunchedEffect(Unit) { viewModel.cargar() }
     LaunchedEffect(refreshTrigger) { if (refreshTrigger > 0) viewModel.recargar() }
@@ -43,9 +43,9 @@ fun MisServiciosScreen(
         }
     }
 
-    LaunchedEffect(uiState.error) {
-        uiState.error?.let {
-            snackbarHostState.showSnackbar(defaultError.format(it))
+    LaunchedEffect(formattedError) {
+        formattedError?.let {
+            snackbarHostState.showSnackbar(it)
             viewModel.clearMessages()
         }
     }

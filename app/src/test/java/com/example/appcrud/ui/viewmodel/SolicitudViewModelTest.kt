@@ -70,7 +70,7 @@ class SolicitudViewModelTest {
         coEvery { repository.createSolicitud(any()) } returns Unit
         var onSuccessCalled = false
 
-        viewModel.createSolicitud(1, "Mensaje", "Direccion") { onSuccessCalled = true }
+        viewModel.createSolicitud(1, "Mensaje", "Direccion", "2026-10-01") { onSuccessCalled = true }
         advanceUntilIdle()
 
         assertTrue(onSuccessCalled)
@@ -81,7 +81,7 @@ class SolicitudViewModelTest {
     fun `createSolicitud - error - muestra error`() = runTest {
         coEvery { repository.createSolicitud(any()) } throws RuntimeException("Create failed")
 
-        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
+        viewModel.createSolicitud(1, "Mensaje", "Direccion", "2026-10-01") {}
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -93,8 +93,8 @@ class SolicitudViewModelTest {
     fun `createSolicitud - doble tap - solo ejecuta una vez`() = runTest {
         coEvery { repository.createSolicitud(any()) } returns Unit
 
-        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
-        viewModel.createSolicitud(1, "Mensaje", "Direccion") {}
+        viewModel.createSolicitud(1, "Mensaje", "Direccion", "2026-10-01") {}
+        viewModel.createSolicitud(1, "Mensaje", "Direccion", "2026-10-01") {}
         advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.createSolicitud(any()) }
