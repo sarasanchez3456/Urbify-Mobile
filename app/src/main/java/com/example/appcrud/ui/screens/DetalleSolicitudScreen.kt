@@ -316,7 +316,14 @@ private fun parseFechaServicio(valor: String): Date? {
     val isoUtc = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
-    val mysqlLocal = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    // "Naive" (sin zona explícita en el string): se agenda en hora de
+    // Colombia (ver CreateSolicitudScreen.kt), así que se parsea con esa
+    // misma zona en vez de la del dispositivo que la esté mostrando —
+    // si no, la hora mostrada y la cuenta regresiva quedan mal en
+    // cualquier dispositivo que no tenga el huso horario de Colombia.
+    val mysqlLocal = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("America/Bogota")
+    }
     return runCatching { isoUtc.parse(valor) }.getOrNull()
         ?: runCatching { mysqlLocal.parse(valor.replace('T', ' ').substringBefore('.')) }.getOrNull()
 }

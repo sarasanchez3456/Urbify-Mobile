@@ -20,6 +20,7 @@ import com.example.appcrud.ui.viewmodel.SolicitudViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.TimeZone
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateSolicitudScreen(
@@ -35,11 +36,17 @@ fun CreateSolicitudScreen(
 
     val context = LocalContext.current
     var fechaProgramadaMillis by remember { mutableStateOf<Long?>(null) }
-    val formatoFecha = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) }
+    // El servicio se agenda en hora de Colombia sin importar el huso horario
+    // configurado en el dispositivo (ver también parseFechaServicio en
+    // DetalleSolicitudScreen.kt, que asume esta misma zona al mostrarla).
+    val zonaColombia = remember { TimeZone.getTimeZone("America/Bogota") }
+    val formatoFecha = remember {
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).apply { timeZone = zonaColombia }
+    }
     val fechaProgramada = fechaProgramadaMillis?.let { formatoFecha.format(it) }.orEmpty()
 
     fun seleccionarFechaHora() {
-        val calendario = Calendar.getInstance().apply {
+        val calendario = Calendar.getInstance(zonaColombia).apply {
             fechaProgramadaMillis?.let { timeInMillis = it }
         }
         DatePickerDialog(
