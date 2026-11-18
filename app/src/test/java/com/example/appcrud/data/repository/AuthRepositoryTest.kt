@@ -1,5 +1,6 @@
 package com.example.appcrud.data.repository
 
+import com.example.appcrud.data.model.AuthError
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.testutil.buildTestApiService
 import kotlinx.coroutines.test.runTest
@@ -107,10 +108,10 @@ class AuthRepositoryTest {
     }
 
     @Test
-    fun `registro exitoso manda el rol y devuelve el usuario creado`() = runTest {
+    fun `registro responde 202 sin token y pide verificar el correo`() = runTest {
         server.enqueue(
-            MockResponse().setResponseCode(201).setBody(
-                """{"token":"jwt-nuevo","usuario":{"id":9,"correo":"nueva@a.com","rol":"proveedor"}}"""
+            MockResponse().setResponseCode(202).setBody(
+                """{"mensaje":"Te enviamos un código","requiere_verificacion":true,"correo":"nueva@a.com","expira_minutos":15}"""
             )
         )
 
@@ -119,14 +120,105 @@ class AuthRepositoryTest {
                 nombre = "Ana",
                 apellido = "Gómez",
                 correo = "nueva@a.com",
-                contrasena = "secreta",
+                contrasena = "secreta123",
                 rol = "proveedor"
             )
         )
 
-        assertEquals(9, respuesta.usuario.idUsuario)
+        assertTrue(respuesta.requiereVerificacion)
+        assertEquals("nueva@a.com", respuesta.correo)
+        assertEquals(15, respuesta.expiraMinutos)
         val request = server.takeRequest()
         assertEquals("/auth/registro", request.path)
         assertTrue(request.body.readUtf8().contains("\"rol\":\"proveedor\""))
+    }
+
+    @Test
+    fun `verificarCorreo manda el codigo en mayusculas y devuelve la sesion`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(
+                """{"mensaje":"Correo verificado","token":"jwt-v","usuario":{"id":9,"correo":"nueva@a.com","rol":"cliente","es_proveedor":false,"modo_activo":"cliente"}}"""
+            )
+        )
+
+        val respuesta = repository.verificarCorreo(" nueva@a.com ", "ab-c 2 34")
+
+        assertEquals("jwt-v", respuesta.token)
+        assertEquals(false, respuesta.usuario.esProveedor)
+        assertEquals("cliente", respuesta.usuario.modoActivo)
+        val request = server.takeRequest()
+        assertEquals("/auth/verificar-correo", request.path)
+        val body = request.body.readUtf8()
+        assertTrue(body, body.contains("\"codigo\":\"ABC234\""))
+        assertTrue(body, body.contains("\"correo\":\"nueva@a.com\""))
+    }
+
+    @Test
+    fun `codigo incorrecto propaga 400 con el mensaje del backend`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(400).setBody("""{"error":"Código inválido o vencido"}"""))
+
+        val excepcion = try {
+            repository.verificarCorreo("nueva@a.com", "AAAAAA")
+            null
+        } catch (e: HttpException) {
+            e
+        }
+
+        assertEquals("Código inválido o vencido", AuthRepository.parseError(requireNotNull(excepcion)).error)
+    }
+
+    @Test
+    fun `reenviarCodigo llama al endpoint con el correo`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody("""{"mensaje":"Si el correo está registrado, te enviamos un código"}"""))
+
+        repository.reenviarCodigo("nueva@a.com")
+
+        val request = server.takeRequest()
+        assertEquals("/auth/reenviar-codigo", request.path)
+        assertEquals("""{"correo":"nueva@a.com"}""", request.body.readUtf8())
+    }
+
+    @Test
+    fun `login sin verificar expone codigo y correo en el 403`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(403).setBody(
+                """{"error":"Debes verificar tu correo","codigo":"correo_no_verificado","correo":"nueva@a.com"}"""
+            )
+        )
+
+        val excepcion = try {
+            repository.login("nueva@a.com", "secreta123")
+            null
+        } catch (e: HttpException) {
+            e
+        }
+
+        val error = AuthRepository.parseError(requireNotNull(excepcion))
+        assertEquals(AuthError.CORREO_NO_VERIFICADO, error.codigo)
+        assertEquals("nueva@a.com", error.correo)
+    }
+
+    @Test
+    fun `cambiarModo manda el modo y devuelve el token nuevo`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(
+                """{"mensaje":"Ahora estás en modo proveedor","token":"jwt-p","usuario":{"id":3,"rol":"cliente","es_proveedor":true,"modo_activo":"proveedor"}}"""
+            )
+        )
+
+        val respuesta = repository.cambiarModo("proveedor")
+
+        assertEquals("jwt-p", respuesta.token)
+        assertEquals("proveedor", respuesta.usuario.modoActivo)
+        val request = server.takeRequest()
+        assertEquals("/auth/cambiar-modo", request.path)
+        assertEquals("""{"modo":"proveedor"}""", request.body.readUtf8())
+    }
+
+    @Test
+    fun `normalizarCodigo deja solo 6 letras y numeros en mayusculas`() {
+        assertEquals("ABC234", AuthRepository.normalizarCodigo("ab-c 2 34xyz"))
+        assertEquals("", AuthRepository.normalizarCodigo("--  "))
+        assertEquals("A1", AuthRepository.normalizarCodigo("a1ñ"))
     }
 }

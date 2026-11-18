@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.api.RetrofitClient
 import com.example.appcrud.data.api.aMensajeUsuario
+import com.example.appcrud.data.model.CambiarModoRequest
 import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.model.conModoActivo
 import com.example.appcrud.data.session.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +19,9 @@ data class SessionState(
     val usuario: Usuario? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val updateSuccess: Boolean = false
+    val updateSuccess: Boolean = false,
+    /** Sube con cada cambio de modo aplicado: la navegación vuelve al inicio del modo nuevo. */
+    val cambiosDeModo: Int = 0
 )
 
 class SessionViewModel @JvmOverloads constructor(
@@ -38,7 +42,29 @@ class SessionViewModel @JvmOverloads constructor(
     private var tokenRenovadoOIntentado = false
 
     fun setSession(usuario: Usuario) {
-        _state.value = SessionState(usuario = usuario)
+        _state.value = SessionState(usuario = usuario.conModoActivo())
+    }
+
+    /**
+     * Doble modo: cambia el modo de ESTA sesión ("cliente" o "proveedor"). El backend
+     * devuelve un token nuevo y el anterior deja de servir, así que se guarda enseguida.
+     */
+    fun cambiarModo(modo: String) {
+        val actual = _state.value.usuario ?: return
+        if (actual.rol == modo || _state.value.isLoading) return
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            try {
+                val respuesta = api.cambiarModo(CambiarModoRequest(modo))
+                TokenManager.saveToken(getApplication(), respuesta.token)
+                _state.value = SessionState(
+                    usuario = respuesta.usuario.conModoActivo(),
+                    cambiosDeModo = _state.value.cambiosDeModo + 1
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = e.aMensajeUsuario())
+            }
+        }
     }
 
     /** Renueva el JWT en segundo plano para que una sesión activa no se corte por expiración. */
@@ -61,8 +87,9 @@ class SessionViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val perfil = api.getPerfil()
-                _state.value = SessionState(usuario = perfil)
+                // El perfil trae el modo activo de esta sesión.
+                val perfil = api.getPerfil().conModoActivo()
+                _state.value = SessionState(usuario = perfil, cambiosDeModo = _state.value.cambiosDeModo)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.aMensajeUsuario())
             }
@@ -75,7 +102,7 @@ class SessionViewModel @JvmOverloads constructor(
             try {
                 // El backend solo devuelve { mensaje }; conservamos el objeto enviado.
                 api.updatePerfil(actualizado)
-                _state.value = SessionState(usuario = actualizado, updateSuccess = true)
+                _state.value = SessionState(usuario = actualizado, updateSuccess = true, cambiosDeModo = _state.value.cambiosDeModo)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.aMensajeUsuario())
             }

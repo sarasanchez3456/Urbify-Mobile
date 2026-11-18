@@ -54,7 +54,10 @@ import com.example.appcrud.R
 import com.example.appcrud.data.model.RegistroRequest
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.repository.AuthRepository
 import com.example.appcrud.ui.theme.UrbifyPrimaryGradient
+import kotlinx.coroutines.delay
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.example.appcrud.ui.viewmodel.AuthViewModel
 
 private fun esCorreoValido(correo: String): Boolean =
@@ -96,9 +99,12 @@ fun AuthScreen(
         )
         Spacer(Modifier.height(28.dp))
 
-        PrimaryTabRow(selectedTabIndex = tab, modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
-            Tab(selected = tab == 0, onClick = { tab = 0; viewModel.clearError() }, text = { Text(stringResource(R.string.iniciar_sesion)) })
-            Tab(selected = tab == 1, onClick = { tab = 1; viewModel.clearError() }, text = { Text(stringResource(R.string.registrarse)) })
+        val verificacion = uiState.verificacion
+        if (verificacion == null) {
+            PrimaryTabRow(selectedTabIndex = tab, modifier = Modifier.clip(RoundedCornerShape(12.dp))) {
+                Tab(selected = tab == 0, onClick = { tab = 0; viewModel.clearError() }, text = { Text(stringResource(R.string.iniciar_sesion)) })
+                Tab(selected = tab == 1, onClick = { tab = 1; viewModel.clearError() }, text = { Text(stringResource(R.string.registrarse)) })
+            }
         }
 
         Spacer(Modifier.height(20.dp))
@@ -116,9 +122,21 @@ fun AuthScreen(
         } else if (uiState.error != null) {
             AuthAlert(titulo = uiState.error!!)
             Spacer(Modifier.height(12.dp))
+        } else if (uiState.aviso != null) {
+            AuthAviso(uiState.aviso!!)
+            Spacer(Modifier.height(12.dp))
         }
 
-        if (tab == 0) {
+        if (verificacion != null) {
+            VerificarCorreoForm(
+                correo = verificacion.correo,
+                envios = verificacion.envios,
+                isLoading = uiState.isLoading,
+                onVerificar = { viewModel.verificarCorreo(it) },
+                onReenviar = { viewModel.reenviarCodigo() },
+                onVolver = { viewModel.cancelarVerificacion() }
+            )
+        } else if (tab == 0) {
             LoginForm(
                 isLoading = uiState.isLoading,
                 onForgotPassword = onForgotPassword,
@@ -191,7 +209,7 @@ private fun RegistroForm(isLoading: Boolean, onSubmit: (RegistroRequest) -> Unit
     val correoConError = correo.isNotBlank() && !esCorreoValido(correo)
 
     val camposOk = nombre.isNotBlank() && apellido.isNotBlank() &&
-            esCorreoValido(correo) && contrasena.length >= 6 &&
+            esCorreoValido(correo) && contrasena.length in 8..72 &&
             (rol != Rol.PROVEEDOR || oficio.isNotBlank())
 
     Column {
@@ -364,6 +382,113 @@ private fun GradientButton(
                 )
             }
         }
+    }
+}
+
+/** "maria.lopez@gmail.com" -> "m***@gmail.com": confirma el destino sin mostrarlo entero. */
+internal fun enmascararCorreo(correo: String): String {
+    val arroba = correo.indexOf('@')
+    if (arroba < 1) return correo
+    return "${correo.first()}***${correo.substring(arroba)}"
+}
+
+private const val ESPERA_REENVIO_SEG = 60
+
+@Composable
+private fun VerificarCorreoForm(
+    correo: String,
+    envios: Int,
+    isLoading: Boolean,
+    onVerificar: (String) -> Unit,
+    onReenviar: () -> Unit,
+    onVolver: () -> Unit
+) {
+    var codigo by rememberSaveable { mutableStateOf("") }
+    // Cada código enviado reinicia la espera de 1 minuto antes de poder pedir otro
+    // (el backend también lo frena). Sin envío todavía (envios = 0) se puede pedir ya.
+    var segundos by remember(envios) { mutableIntStateOf(if (envios > 0) ESPERA_REENVIO_SEG else 0) }
+    LaunchedEffect(envios) {
+        while (segundos > 0) {
+            delay(1000)
+            segundos--
+        }
+    }
+
+    Column(modifier = Modifier.testTag("verificar_correo_form")) {
+        Text(
+            stringResource(R.string.verifica_tu_correo),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            stringResource(R.string.verifica_tu_correo_explicacion, enmascararCorreo(correo)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value = codigo,
+            // Siempre en MAYÚSCULAS, solo letras y números, máximo 6.
+            onValueChange = { codigo = AuthRepository.normalizarCodigo(it) },
+            label = { Text(stringResource(R.string.codigo_verificacion)) },
+            singleLine = true,
+            textStyle = MaterialTheme.typography.headlineSmall.copy(
+                letterSpacing = 6.sp,
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Ascii,
+                capitalization = KeyboardCapitalization.Characters,
+                autoCorrectEnabled = false
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("codigo_verificacion_input")
+        )
+        Spacer(Modifier.height(20.dp))
+        GradientButton(
+            text = stringResource(R.string.verificar_y_entrar),
+            isLoading = isLoading,
+            enabled = codigo.length == AuthRepository.LONGITUD_CODIGO,
+            onClick = { onVerificar(codigo) },
+            modifier = Modifier.testTag("verificar_correo_button")
+        )
+        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { codigo = ""; onReenviar() },
+            enabled = segundos == 0 && !isLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                if (segundos > 0) stringResource(R.string.enviar_otro_codigo_en, segundos)
+                else stringResource(R.string.enviar_otro_codigo)
+            )
+        }
+        Text(
+            stringResource(R.string.codigo_no_llega),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onVolver, enabled = !isLoading, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.usar_otro_correo))
+        }
+    }
+}
+
+@Composable
+private fun AuthAviso(texto: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
     }
 }
 

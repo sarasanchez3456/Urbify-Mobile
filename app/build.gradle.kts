@@ -41,7 +41,8 @@ val stagingApiBaseUrl = apiBaseUrl(
 )
 val productionApiBaseUrl = apiBaseUrl(
     propertyName = "PRODUCTION_API_BASE_URL",
-    defaultValue = "https://api.urbify.example/api/",
+    // Backend desplegado en Vercel (ver docs/DESPLIEGUE_VERCEL.md en el repo Urbify).
+    defaultValue = "https://urbify-api.vercel.app/api/",
     requireHttps = true
 )
 

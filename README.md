@@ -104,7 +104,7 @@ La URL ya no está escrita en Kotlin. Cada variante genera `BuildConfig.API_BASE
 |---|---|---|---|
 | Desarrollo (`developmentDebug`) | `DEVELOPMENT_API_BASE_URL` | `http://10.0.2.2:4000/api/` | Permitido, sólo para desarrollo |
 | Staging (`stagingRelease`) | `STAGING_API_BASE_URL` | `https://staging-api.urbify.example/api/` | No permitido; HTTPS obligatorio |
-| Producción (`productionRelease`) | `PRODUCTION_API_BASE_URL` | `https://api.urbify.example/api/` | No permitido; HTTPS obligatorio |
+| Producción (`productionRelease`) | `PRODUCTION_API_BASE_URL` | `https://urbify-api.vercel.app/api/` (backend desplegado) | No permitido; HTTPS obligatorio |
 
 Los dominios `.example` de staging y producción son marcadores seguros: se deben reemplazar por los dominios HTTPS reales antes de distribuir esas variantes. Gradle rechaza una URL sin `/` final y también rechaza HTTP para staging o producción.
 

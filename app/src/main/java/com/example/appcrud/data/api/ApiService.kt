@@ -1,6 +1,10 @@
 package com.example.appcrud.data.api
 
 import com.example.appcrud.data.model.AuthResponse
+import com.example.appcrud.data.model.CambiarModoRequest
+import com.example.appcrud.data.model.ReenviarCodigoRequest
+import com.example.appcrud.data.model.RegistroResponse
+import com.example.appcrud.data.model.VerificarCorreoRequest
 import com.example.appcrud.data.model.Calificacion
 import com.example.appcrud.data.model.CalificacionesProveedorResponse
 import com.example.appcrud.data.model.Categoria
@@ -24,11 +28,21 @@ import retrofit2.http.*
 interface ApiService {
 
     // Auth
+    // 202 sin token: la sesión se obtiene en verificar-correo.
     @POST("auth/registro")
-    suspend fun registro(@Body request: RegistroRequest): AuthResponse
+    suspend fun registro(@Body request: RegistroRequest): RegistroResponse
+
+    @POST("auth/verificar-correo")
+    suspend fun verificarCorreo(@Body request: VerificarCorreoRequest): AuthResponse
+
+    @POST("auth/reenviar-codigo")
+    suspend fun reenviarCodigo(@Body request: ReenviarCodigoRequest): MensajeResponse
 
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
+
+    @POST("auth/cambiar-modo")
+    suspend fun cambiarModo(@Body request: CambiarModoRequest): AuthResponse
 
     @POST("auth/refresh")
     suspend fun refresh(): RefreshResponse

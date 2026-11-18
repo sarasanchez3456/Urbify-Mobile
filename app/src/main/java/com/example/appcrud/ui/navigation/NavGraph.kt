@@ -400,6 +400,13 @@ fun AppNavGraph(
                         navController.navigate(Routes.LOGIN) {
                             popUpTo(0) { inclusive = true }
                         }
+                    },
+                    // Doble modo: el inicio y la barra inferior cambian con el modo; se limpia la pila
+                    // para no volver a pantallas del modo anterior.
+                    onModoCambiado = {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
                 )
             }
