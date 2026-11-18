@@ -8,7 +8,10 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.appcrud.data.api.ApiService
 import com.example.appcrud.data.model.MensajeResponse
+import com.example.appcrud.data.model.AuthResponse
+import com.example.appcrud.data.model.CambiarModoRequest
 import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.model.conModoActivo
 import com.example.appcrud.data.session.TokenManager
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -80,7 +83,7 @@ class SessionViewModelTest {
 
         viewModel.setSession(usuario)
 
-        assertEquals(usuario, viewModel.usuario)
+        assertEquals(usuario.conModoActivo(), viewModel.usuario)
         assertEquals("cliente", viewModel.rol)
         assertEquals(1, viewModel.idUsuario)
     }
@@ -93,7 +96,7 @@ class SessionViewModelTest {
         viewModel.cargarPerfil()
 
         val estado = viewModel.state.value
-        assertEquals(usuario, estado.usuario)
+        assertEquals(usuario.conModoActivo(), estado.usuario)
         assertFalse(estado.isLoading)
         assertNull(estado.error)
     }
@@ -172,6 +175,54 @@ class SessionViewModelTest {
         viewModel.clearUpdateSuccess()
 
         assertFalse(viewModel.state.value.updateSuccess)
+    }
+
+    @Test
+    fun `cambiarModo guarda el token nuevo y pasa al modo pedido`() = runTest {
+        viewModel.setSession(Usuario(idUsuario = 3, rol = "cliente", esProveedor = true, modoActivo = "cliente"))
+        coEvery { api.cambiarModo(CambiarModoRequest("proveedor")) } returns AuthResponse(
+            "token-proveedor", Usuario(idUsuario = 3, rol = "cliente", esProveedor = true, modoActivo = "proveedor")
+        )
+
+        viewModel.cambiarModo("proveedor")
+
+        val estado = awaitState { it.cambiosDeModo == 1 }
+        assertEquals("proveedor", estado.usuario?.rol)
+        assertEquals(1, estado.cambiosDeModo)
+        assertFalse(estado.isLoading)
+        assertEquals("token-proveedor", TokenManager.getToken())
+    }
+
+    @Test
+    fun `cambiarModo al modo actual no llama a la API`() = runTest {
+        viewModel.setSession(Usuario(idUsuario = 3, rol = "cliente", esProveedor = true, modoActivo = "cliente"))
+
+        // `api` es estricto: si cambiarModo llamara a la API, MockK fallaría.
+        viewModel.cambiarModo("cliente")
+
+        assertEquals(0, viewModel.state.value.cambiosDeModo)
+    }
+
+    @Test
+    fun `cambiarModo con error conserva el modo y el token`() = runTest {
+        viewModel.setSession(Usuario(idUsuario = 3, rol = "cliente", esProveedor = true, modoActivo = "cliente"))
+        coEvery { api.cambiarModo(any()) } throws IOException("Sin conexión")
+
+        viewModel.cambiarModo("proveedor")
+
+        val estado = awaitState { it.error != null }
+        assertEquals("cliente", estado.usuario?.rol)
+        assertEquals(0, estado.cambiosDeModo)
+        assertEquals("token-previo", TokenManager.getToken())
+    }
+
+    @Test
+    fun `cargarPerfil usa el modo activo de la sesion`() = runTest {
+        coEvery { api.getPerfil() } returns Usuario(idUsuario = 3, rol = "cliente", esProveedor = true, modoActivo = "proveedor")
+
+        viewModel.cargarPerfil()
+
+        assertEquals("proveedor", viewModel.rol)
     }
 
     @Test

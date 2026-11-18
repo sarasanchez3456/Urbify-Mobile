@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.appcrud.R
 import com.example.appcrud.data.model.Rol
 import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.model.puedeSerProveedor
 import com.example.appcrud.ui.theme.UrbifyPrimary
 import com.example.appcrud.ui.theme.UrbifySecondary
 import com.example.appcrud.ui.viewmodel.SessionViewModel
@@ -36,11 +37,18 @@ import com.example.appcrud.ui.viewmodel.SessionViewModel
 fun PerfilScreen(
     sessionViewModel: SessionViewModel,
     onBack: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onModoCambiado: () -> Unit = {}
 ) {
     val sessionState by sessionViewModel.state.collectAsState()
     val usuario = sessionState.usuario
     var modoEdicion by remember { mutableStateOf(false) }
+
+    // Solo reacciona a los cambios de modo hechos mientras esta pantalla está abierta.
+    val cambiosAlAbrir = remember { sessionState.cambiosDeModo }
+    LaunchedEffect(sessionState.cambiosDeModo) {
+        if (sessionState.cambiosDeModo > cambiosAlAbrir) onModoCambiado()
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultPerfilActualizado = stringResource(R.string.perfil_actualizado)
@@ -106,6 +114,7 @@ fun PerfilScreen(
                 usuario = usuario,
                 isLoading = sessionState.isLoading,
                 modifier = Modifier.padding(padding),
+                onCambiarModo = { sessionViewModel.cambiarModo(it) },
                 onLogout = {
                     sessionViewModel.logout()
                     onLogout()
@@ -120,6 +129,7 @@ private fun VistaPerfil(
     usuario: Usuario,
     isLoading: Boolean,
     modifier: Modifier = Modifier,
+    onCambiarModo: (String) -> Unit = {},
     onLogout: () -> Unit
 ) {
     Column(
@@ -181,6 +191,12 @@ private fun VistaPerfil(
             usuario.oficio?.let { CampoInfo(stringResource(R.string.oficio), it) }
         }
 
+        // Doble modo: solo para cuentas habilitadas como proveedor (el admin no tiene modos).
+        if (usuario.puedeSerProveedor) {
+            Spacer(Modifier.height(24.dp))
+            SelectorModo(modoActual = usuario.rol, isLoading = isLoading, onCambiarModo = onCambiarModo)
+        }
+
         Spacer(Modifier.height(32.dp))
 
         OutlinedButton(
@@ -195,6 +211,72 @@ private fun VistaPerfil(
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.cerrar_sesion))
+        }
+    }
+}
+
+/** Selector cliente/proveedor de la misma cuenta. Cambiar de modo vuelve al inicio del modo nuevo. */
+@Composable
+private fun SelectorModo(modoActual: String, isLoading: Boolean, onCambiarModo: (String) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.modo_de_la_cuenta),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            OpcionModo(
+                titulo = stringResource(R.string.modo_cliente),
+                descripcion = stringResource(R.string.modo_cliente_desc),
+                seleccionado = modoActual == Rol.CLIENTE,
+                enabled = !isLoading,
+                modifier = Modifier.weight(1f)
+            ) { onCambiarModo(Rol.CLIENTE) }
+            OpcionModo(
+                titulo = stringResource(R.string.modo_proveedor),
+                descripcion = stringResource(R.string.modo_proveedor_desc),
+                seleccionado = modoActual == Rol.PROVEEDOR,
+                enabled = !isLoading,
+                modifier = Modifier.weight(1f)
+            ) { onCambiarModo(Rol.PROVEEDOR) }
+        }
+    }
+}
+
+@Composable
+private fun OpcionModo(
+    titulo: String,
+    descripcion: String,
+    seleccionado: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    OutlinedCard(
+        onClick = onClick,
+        enabled = enabled && !seleccionado,
+        border = BorderStroke(
+            if (seleccionado) 2.dp else 1.dp,
+            if (seleccionado) UrbifyPrimary else MaterialTheme.colorScheme.outlineVariant
+        ),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (seleccionado) UrbifyPrimary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+            disabledContainerColor = if (seleccionado) UrbifyPrimary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+        ),
+        modifier = modifier.semantics {
+            contentDescription = if (seleccionado) "$titulo, activo" else "Cambiar a $titulo"
+        }
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                titulo,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (seleccionado) UrbifyPrimary else MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(descripcion, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -5,11 +5,15 @@ import com.example.appcrud.data.api.aMensajeUsuario
 import android.app.Application
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.example.appcrud.data.model.AuthResponse
+import com.example.appcrud.data.model.MensajeResponse
 import com.example.appcrud.data.model.RegistroRequest
+import com.example.appcrud.data.model.RegistroResponse
 import com.example.appcrud.data.model.Usuario
+import com.example.appcrud.data.model.conModoActivo
 import com.example.appcrud.data.repository.AuthRepository
 import com.example.appcrud.data.session.TokenManager
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +27,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -104,7 +109,7 @@ class AuthViewModelTest {
         val estado = awaitState { !it.isLoading }
         assertTrue(estado.success)
         assertFalse(estado.isLoading)
-        assertEquals(usuario, estado.usuarioLogueado)
+        assertEquals(usuario.conModoActivo(), estado.usuarioLogueado)
         assertEquals("jwt-123", TokenManager.getToken())
     }
 
@@ -145,20 +150,139 @@ class AuthViewModelTest {
         assertEquals(IOException("Failed to connect").aMensajeUsuario(), estado.error)
     }
 
+    private val registroRequest = RegistroRequest(
+        nombre = "Ana", apellido = "Gómez", correo = " Nueva@A.com ",
+        contrasena = "secreta123", rol = "proveedor"
+    )
+
     @Test
-    fun `registro exitoso deja success en true`() = runTest {
-        val usuario = Usuario(idUsuario = 9, correo = "nueva@a.com", rol = "proveedor")
-        val request = RegistroRequest(
-            nombre = "Ana", apellido = "Gómez", correo = "nueva@a.com",
-            contrasena = "secreta", rol = "proveedor"
-        )
-        coEvery { repository.registro(request) } returns AuthResponse("jwt-nuevo", usuario)
+    fun `registro NO inicia sesion y deja pendiente la verificacion del correo`() = runTest {
+        coEvery { repository.registro(registroRequest) } returns RegistroResponse(correo = "nueva@a.com")
 
-        viewModel.registro(request)
+        viewModel.registro(registroRequest)
 
-        val estado = awaitState { !it.isLoading }
+        val estado = viewModel.uiState.value
+        assertFalse(estado.success)
+        assertFalse(estado.isLoading)
+        assertEquals(VerificacionPendiente("nueva@a.com", envios = 1), estado.verificacion)
+        assertNull(TokenManager.getToken())
+    }
+
+    @Test
+    fun `si el backend no devuelve el correo se usa el escrito, normalizado`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = null)
+
+        viewModel.registro(registroRequest)
+
+        assertEquals("nueva@a.com", viewModel.uiState.value.verificacion?.correo)
+    }
+
+    @Test
+    fun `verificar el codigo guarda el token y entra en el modo activo`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = "nueva@a.com")
+        val usuario = Usuario(idUsuario = 9, correo = "nueva@a.com", rol = "proveedor", esProveedor = true, modoActivo = "proveedor")
+        coEvery { repository.verificarCorreo("nueva@a.com", "ABC234") } returns AuthResponse("jwt-v", usuario)
+        viewModel.registro(registroRequest)
+
+        viewModel.verificarCorreo("ABC234")
+
+        val estado = awaitState { it.success }
         assertTrue(estado.success)
-        assertEquals(usuario, estado.usuarioLogueado)
+        assertNull(estado.verificacion)
+        assertEquals("proveedor", estado.usuarioLogueado?.rol)
+        assertEquals("jwt-v", TokenManager.getToken())
+    }
+
+    @Test
+    fun `codigo incorrecto muestra el error y deja reintentar`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = "nueva@a.com")
+        coEvery { repository.verificarCorreo(any(), any()) } throws
+            httpException(400, """{"error":"Código inválido o vencido"}""")
+        viewModel.registro(registroRequest)
+
+        viewModel.verificarCorreo("AAAAAA")
+
+        val estado = viewModel.uiState.value
+        assertEquals("Código inválido o vencido", estado.error)
+        assertFalse(estado.success)
+        assertFalse(estado.isLoading)
+        assertEquals("nueva@a.com", estado.verificacion?.correo)
+    }
+
+    @Test
+    fun `demasiados intentos de codigo muestran el bloqueo`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = "nueva@a.com")
+        coEvery { repository.verificarCorreo(any(), any()) } throws
+            httpException(429, """{"error":"Demasiados intentos","bloqueado":true,"minutos_restantes":7}""")
+        viewModel.registro(registroRequest)
+
+        viewModel.verificarCorreo("AAAAAA")
+
+        assertTrue(viewModel.uiState.value.bloqueado)
+        assertEquals(7, viewModel.uiState.value.minutosRestantes)
+    }
+
+    @Test
+    fun `reenviar el codigo avisa y reinicia la espera`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = "nueva@a.com")
+        coEvery { repository.reenviarCodigo("nueva@a.com") } returns MensajeResponse(mensaje = "ok")
+        viewModel.registro(registroRequest)
+
+        viewModel.reenviarCodigo()
+
+        val estado = viewModel.uiState.value
+        assertEquals(2, estado.verificacion?.envios)
+        assertTrue(estado.aviso!!.contains("código nuevo"))
+        coVerify(exactly = 1) { repository.reenviarCodigo("nueva@a.com") }
+    }
+
+    @Test
+    fun `login con correo sin verificar pasa a la pantalla del codigo y envia uno nuevo`() = runTest {
+        coEvery { repository.login(any(), any()) } throws httpException(
+            403, """{"error":"Debes verificar tu correo","codigo":"correo_no_verificado","correo":"ana@a.com"}"""
+        )
+        coEvery { repository.reenviarCodigo("ana@a.com") } returns MensajeResponse(mensaje = "ok")
+
+        viewModel.login("Ana@a.com", "secreta123")
+
+        val estado = viewModel.uiState.value
+        assertNull(estado.error)
+        assertFalse(estado.success)
+        assertEquals(VerificacionPendiente("ana@a.com", envios = 1), estado.verificacion)
+        assertTrue(estado.aviso!!.contains("no está verificado"))
+        coVerify(exactly = 1) { repository.reenviarCodigo("ana@a.com") }
+    }
+
+    @Test
+    fun `un 403 de otro tipo (cuenta suspendida) se muestra como error`() = runTest {
+        coEvery { repository.login(any(), any()) } throws httpException(
+            403, """{"error":"Tu cuenta ha sido suspendida","codigo":"cuenta_suspendida"}"""
+        )
+
+        viewModel.login("ana@a.com", "secreta123")
+
+        assertEquals("Tu cuenta ha sido suspendida", viewModel.uiState.value.error)
+        assertNull(viewModel.uiState.value.verificacion)
+    }
+
+    @Test
+    fun `cancelar la verificacion vuelve al formulario`() = runTest {
+        coEvery { repository.registro(any()) } returns RegistroResponse(correo = "nueva@a.com")
+        viewModel.registro(registroRequest)
+
+        viewModel.cancelarVerificacion()
+
+        assertNull(viewModel.uiState.value.verificacion)
+    }
+
+    @Test
+    fun `login exitoso usa el modo activo de la sesion como rol`() = runTest {
+        val usuario = Usuario(idUsuario = 1, rol = "cliente", esProveedor = true, modoActivo = "proveedor")
+        coEvery { repository.login(any(), any()) } returns AuthResponse("jwt-1", usuario)
+
+        viewModel.login("a@a.com", "secreta")
+
+        assertEquals("proveedor", awaitState { it.success }.usuarioLogueado?.rol)
     }
 
     @Test

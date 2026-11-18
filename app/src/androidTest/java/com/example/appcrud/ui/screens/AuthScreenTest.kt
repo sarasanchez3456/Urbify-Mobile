@@ -63,7 +63,8 @@ class AuthScreenTest {
         composeRule.onNodeWithText("Nombre").performTextInput("Ana")
         composeRule.onNodeWithText("Apellido").performTextInput("Gómez")
         composeRule.onNodeWithText("Correo electrónico").performTextInput("ana@example.com")
-        composeRule.onNodeWithText("Contraseña (mín. 6)").performTextInput("secreta")
+        // El backend exige entre 8 y 72 caracteres.
+        composeRule.onNodeWithText("Contraseña (8 a 72 caracteres)").performTextInput("secreta123")
         composeRule.onNodeWithText("Proveedor").performClick()
 
         // Sin oficio, camposOk es false aunque el resto esté completo.
@@ -72,5 +73,24 @@ class AuthScreenTest {
         composeRule.onNodeWithText("Oficio").performTextInput("Plomería")
 
         composeRule.onNodeWithText("Crear cuenta").assertIsEnabled()
+    }
+
+    @Test
+    fun tabRegistro_contrasenaDeMenosDe8NoPermiteCrearCuenta() {
+        composeRule.setContent { AuthScreen(onAuthSuccess = {}) }
+
+        composeRule.onNodeWithText("Registrarse").performClick()
+        composeRule.onNodeWithText("Nombre").performTextInput("Ana")
+        composeRule.onNodeWithText("Apellido").performTextInput("Gómez")
+        composeRule.onNodeWithText("Correo electrónico").performTextInput("ana@example.com")
+        composeRule.onNodeWithText("Contraseña (8 a 72 caracteres)").performTextInput("secreta")
+
+        composeRule.onNodeWithText("Crear cuenta").assertIsNotEnabled()
+    }
+
+    @Test
+    fun enmascararCorreo_muestraSoloLaPrimeraLetraYElDominio() {
+        org.junit.Assert.assertEquals("m***@gmail.com", enmascararCorreo("maria.lopez@gmail.com"))
+        org.junit.Assert.assertEquals("sin-arroba", enmascararCorreo("sin-arroba"))
     }
 }

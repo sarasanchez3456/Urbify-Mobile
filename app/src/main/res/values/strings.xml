@@ -8,7 +8,7 @@
     <string name="registrarse">Registrarse</string>
     <string name="correo_electronico">Correo electrónico</string>
     <string name="contraseña">Contraseña</string>
-    <string name="contraseña_min">Contraseña (mín. 6)</string>
+    <string name="contraseña_min">Contraseña (8 a 72 caracteres)</string>
     <string name="formato_correo_invalido">Formato de correo inválido</string>
     <string name="nombre">Nombre</string>
     <string name="apellido">Apellido</string>
@@ -22,6 +22,22 @@
     <string name="cuenta_bloqueada">Cuenta bloqueada temporalmente</string>
     <string name="intentar_de_nuevo">Intenta de nuevo en %1$d minuto%2$s</string>
     <string name="olvidaste_contrasena">¿Olvidaste tu contraseña?</string>
+
+    <!-- Verificación de correo (registro con código, issue #49) -->
+    <string name="verifica_tu_correo">Verifica tu correo</string>
+    <string name="verifica_tu_correo_explicacion">Enviamos un código de 6 caracteres a %1$s. Escríbelo para activar tu cuenta.</string>
+    <string name="verificar_y_entrar">Verificar y entrar</string>
+    <string name="enviar_otro_codigo">Enviar otro código</string>
+    <string name="enviar_otro_codigo_en">Enviar otro código en %1$d s</string>
+    <string name="usar_otro_correo">Volver y usar otro correo</string>
+    <string name="codigo_no_llega">¿No llega? Revisa la carpeta de spam. El código vence en unos minutos.</string>
+
+    <!-- Doble modo -->
+    <string name="modo_de_la_cuenta">Modo de la cuenta</string>
+    <string name="modo_cliente">Modo cliente</string>
+    <string name="modo_proveedor">Modo proveedor</string>
+    <string name="modo_cliente_desc">Busca y contrata servicios.</string>
+    <string name="modo_proveedor_desc">Recibe solicitudes y gestiona tus servicios.</string>
 
     <!-- Recuperar contraseña -->
     <string name="recuperar_contrasena_title">Recuperar contraseña</string>

@@ -25,6 +25,31 @@ data class AuthResponse(
     @SerializedName("usuario") val usuario: Usuario
 )
 
+/**
+ * `POST /auth/registro` responde 202 SIN token: la cuenta queda sin verificar y se
+ * envía un código de 6 caracteres al correo. La sesión empieza al verificarlo.
+ */
+data class RegistroResponse(
+    @SerializedName("mensaje") val mensaje: String? = null,
+    @SerializedName("requiere_verificacion") val requiereVerificacion: Boolean = true,
+    @SerializedName("correo") val correo: String? = null,
+    @SerializedName("expira_minutos") val expiraMinutos: Int? = null
+)
+
+data class VerificarCorreoRequest(
+    @SerializedName("correo") val correo: String,
+    @SerializedName("codigo") val codigo: String
+)
+
+data class ReenviarCodigoRequest(
+    @SerializedName("correo") val correo: String
+)
+
+/** Doble modo: `POST /auth/cambiar-modo` devuelve un token nuevo; el anterior deja de servir. */
+data class CambiarModoRequest(
+    @SerializedName("modo") val modo: String
+)
+
 data class RefreshResponse(
     @SerializedName("mensaje") val mensaje: String? = null,
     @SerializedName("token") val token: String
